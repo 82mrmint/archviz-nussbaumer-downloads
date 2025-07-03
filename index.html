@@ -47,6 +47,32 @@
 
         .logo-container {
             margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo {
+            width: 200px;
+            height: auto;
+            max-height: 120px;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
+        }
+
+        .logo-fallback {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #333333, #666666);
+            border-radius: 8px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            font-weight: 300;
+            letter-spacing: 2px;
         }
 
         .company-name {
@@ -185,7 +211,14 @@
 <body>
     <div class="download-container">
         <div class="logo-container">
-            <div class="company-name">archVIZ NUSSBAUMER</div>
+            <img src="https://lh3.googleusercontent.com/d/1fNKjcrw-kfyaROxy53ALujdpNpmhMQOT" 
+                 alt="archVIZ NUSSBAUMER Logo" 
+                 class="logo"
+                 onerror="this.style.display='none'; document.getElementById('fallbackLogo').style.display='flex';">
+            <!-- Fallback Logo falls Google Drive nicht funktioniert -->
+            <div id="fallbackLogo" class="logo-fallback">
+                <span>AN</span>
+            </div>
             <div class="company-subtitle">Architekturvisualisierung</div>
         </div>
         
@@ -215,9 +248,11 @@
         function initDownload() {
             const downloadUrl = getUrlParameter('download');
             const jobNumber = getUrlParameter('job');
+            const folderName = getUrlParameter('folder');
+            const zipName = getUrlParameter('zipname');
             const expiryDate = getUrlParameter('expiry');
 
-            console.log('URL-Parameter:', { downloadUrl, jobNumber, expiryDate });
+            console.log('URL-Parameter:', { downloadUrl, jobNumber, folderName, zipName, expiryDate });
 
             const contentDiv = document.getElementById('download-content');
 
@@ -234,8 +269,9 @@
                 return;
             }
 
-            // Erfolg anzeigen
-            const fileName = `Projekt_${jobNumber}.zip`;
+            // Erfolg anzeigen - verwende echten ZIP-Namen falls verfügbar
+            const fileName = zipName ? decodeURIComponent(zipName) : `Projekt_${jobNumber}.zip`;
+            const displayName = zipName ? decodeURIComponent(zipName) : (folderName ? `${decodeURIComponent(folderName)}.zip` : `${jobNumber}.zip`);
             const expiryText = expiryDate ? new Date(expiryDate).toLocaleDateString('de-DE') : 'unbekannt';
 
             contentDiv.innerHTML = `
@@ -245,7 +281,7 @@
                 </div>
                 
                 <div class="file-info">
-                    <div class="file-name">📁 ${fileName}</div>
+                    <div class="file-name">📁 ${displayName}</div>
                     <div class="file-details">Gültig bis: ${expiryText}</div>
                 </div>
                 
@@ -262,7 +298,7 @@
                 // Download über versteckten Link
                 const link = document.createElement('a');
                 link.href = downloadUrl;
-                link.download = fileName;
+                link.download = fileName; // Verwendet echten ZIP-Namen
                 link.style.display = 'none';
                 document.body.appendChild(link);
                 link.click();
