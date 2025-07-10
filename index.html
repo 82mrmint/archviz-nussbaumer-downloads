@@ -33,6 +33,12 @@
             position: relative;
             overflow: hidden;
             backdrop-filter: blur(10px);
+            animation: slideUp 0.6s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .download-container::before {
@@ -191,6 +197,181 @@
         .contact-info a:hover {
             color: #333333;
         }
+        
+        /* Spinner Animation */
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e3e3e3;
+            border-top: 2px solid #666666;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Einfacher Cookie-Hinweis (nur Information, kein Consent) */
+        .cookie-notice {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.95);
+            color: white;
+            padding: 15px 20px;
+            z-index: 10000;
+            font-size: 14px;
+            line-height: 1.5;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
+            transform: translateY(100%);
+            transition: transform 0.3s ease-in-out;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .cookie-notice.show {
+            transform: translateY(0);
+        }
+        .cookie-notice.hidden {
+            display: none;
+        }
+        .cookie-notice p {
+            margin: 0;
+            flex: 1;
+            min-width: 250px;
+        }
+        .cookie-notice a {
+            color: #666666;
+            text-decoration: none;
+        }
+        .cookie-notice a:hover {
+            text-decoration: underline;
+        }
+        .cookie-notice button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #666666;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            white-space: nowrap;
+        }
+        .cookie-notice button:hover {
+            background: #555555;
+        }
+        
+        .privacy-link {
+            color: #666666;
+            text-decoration: none;
+        }
+        .privacy-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* Modal Styles (Datenschutz & Impressum) */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10001;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+        
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal h2 {
+            margin: 0 0 20px 0;
+            color: #333;
+            border-bottom: 2px solid #666666;
+            padding-bottom: 10px;
+        }
+        .modal h3 {
+            color: #333;
+            margin: 25px 0 15px 0;
+        }
+        .modal h4 {
+            color: #333;
+            margin: 20px 0 10px 0;
+            font-size: 16px;
+        }
+        .modal p, .modal ul {
+            color: #666;
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+        .modal ul {
+            padding-left: 20px;
+        }
+        .modal .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 20px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal .close-btn:hover {
+            color: #333;
+        }
+        .privacy-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 14px;
+        }
+        .privacy-table th,
+        .privacy-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .privacy-table th {
+            background-color: #f5f5f5;
+            font-weight: 600;
+        }
+        .privacy-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
 
         @media (max-width: 480px) {
             .download-container {
@@ -205,10 +386,181 @@
             .company-subtitle {
                 font-size: 12px;
             }
+            
+            .cookie-notice {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+            .cookie-notice p {
+                min-width: auto;
+            }
+            .modal-content {
+                padding: 20px;
+                margin: 10px;
+            }
+            .privacy-table {
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Versteckter iframe für automatischen Download -->
+    <iframe id="downloadFrame" style="display: none;"></iframe>
+    
+    <!-- Einfacher Cookie-Hinweis (nur Information, kein Consent erforderlich) -->
+    <div id="cookieNotice" class="cookie-notice hidden" role="dialog" aria-live="polite">
+        <p>🍪 Diese Website setzt ausschließlich technisch notwendige Cookies. 
+           Mehr Informationen in der <a href="#" onclick="showPrivacyModal(); return false;">Datenschutzerklärung</a>.</p>
+        <button id="cookieOkBtn">Verstanden</button>
+    </div>
+    
+    <!-- Datenschutzerklärung Modal -->
+    <div class="modal" id="privacyModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closePrivacyModal()">&times;</button>
+            
+            <h2>DATENSCHUTZERKLÄRUNG</h2>
+            
+            <h3>1. Verantwortlicher</h3>
+            <p>
+                <strong>Sven Nussbaumer - archVIZ NUSSBAUMER</strong><br>
+                Hummel 40, 6941 Langenegg, Österreich<br>
+                E-Mail: office@archviz-nussbaumer.at<br>
+                UID-Nummer: ATU79613802
+            </p>
+            
+            <h3>2. Zweck und Rechtsgrundlagen</h3>
+            <p>Wir stellen unseren Kunden über temporäre Links Visualisierungsdaten zum Herunterladen bereit.</p>
+            <table class="privacy-table">
+                <thead>
+                    <tr>
+                        <th>Zweck</th>
+                        <th>Rechtsgrundlage</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Vertragserfüllung – Bereitstellung der Dateien im Rahmen des jeweiligen Visualisierungsauftrags</td>
+                        <td>Art. 6 Abs. 1 lit. b DSGVO</td>
+                    </tr>
+                    <tr>
+                        <td>IT- und Netzsicherheit – Protokollierung technischer Zugriffsdaten zur Erkennung und Abwehr von Cyberangriffen</td>
+                        <td>Art. 6 Abs. 1 lit. f DSGVO; Erwägungsgrund 49</td>
+                    </tr>
+                </tbody>
+            </table>
+            
+            <h3>3. Hosting / Empfänger der Daten</h3>
+            <table class="privacy-table">
+                <thead>
+                    <tr>
+                        <th>Dienst</th>
+                        <th>Rolle</th>
+                        <th>Standort</th>
+                        <th>Garantien bei möglicher Drittlandübermittlung*</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>GitHub Pages (GitHub Inc., 88 Colin P. Kelly Jr St, San Francisco CA 94107, USA)</td>
+                        <td>Hosting-Provider (statisches Frontend)</td>
+                        <td>USA</td>
+                        <td>Standard-Vertragsklauseln (SCC) & EU-US Data-Privacy-Framework (DPF)</td>
+                    </tr>
+                    <tr>
+                        <td>Microsoft Azure – Region Germany West Central (Frankfurt) (Microsoft Ireland Operations Ltd., One Microsoft Place, Dublin 18, Irland)</td>
+                        <td>Auftragsverarbeiter; Speicherung & Auslieferung der Download-Dateien (Blob Storage)</td>
+                        <td>EU (Deutschland)</td>
+                        <td>EU Data Boundary; Remote-Support-Zugriffe außerhalb der EU nur ausnahmsweise, abgesichert durch SCC & DPF</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p><small>*Eine regelmäßige Übermittlung personenbezogener Daten in Drittländer ist nicht vorgesehen. Sollte sie in Einzelfällen (z. B. Support) nötig werden, gewährleisten die genannten Anbieter ein angemessenes Schutzniveau.</small></p>
+            
+            <h4>Hinweis zu GitHub Pages</h4>
+            <p>Beim Aufruf unseres Portals wird Ihre IP-Adresse an GitHub-Server in den USA übertragen. GitHub gewährleistet ein angemessenes Datenschutzniveau durch SCC und seine Zertifizierung im EU-US Data-Privacy-Framework.</p>
+            
+            <h3>4. Server-Logfiles</h3>
+            <p>Beim Aufruf des Portals bzw. eines Download-Links erfassen die Hosting-Dienste automatisch:</p>
+            <ul>
+                <li>IP-Adresse</li>
+                <li>Datum / Uhrzeit</li>
+                <li>angeforderte URL</li>
+                <li>Referrer-URL</li>
+                <li>Browser / Betriebssystem (User-Agent)</li>
+                <li>HTTP-Statuscode</li>
+            </ul>
+            <p><strong>Zweck:</strong> Gewährleistung der Funktions- und IT-Sicherheit, Fehlerdiagnose, Abwehr von Missbrauch und Angriffen (Art. 6 Abs. 1 lit. f DSGVO; § 165 Abs. 3 TKG 2021).</p>
+            <p><strong>Speicherdauer:</strong> maximal 14 Tage, danach automatische Löschung.</p>
+            <p><strong>Keine Profilbildung:</strong> Eine Zusammenführung dieser Logdaten mit anderen Daten findet nicht statt.</p>
+            
+            <h3>5. Cookies / Tracking</h3>
+            <p>Das Portal verwendet keine Cookies, Tracking-Pixel oder sonstige Analyse- bzw. Marketing-Technologien.</p>
+            
+            <h3>6. Betroffenenrechte</h3>
+            <p>Sie haben das Recht auf</p>
+            <ul>
+                <li>Auskunft (Art. 15 DSGVO)</li>
+                <li>Berichtigung (Art. 16)</li>
+                <li>Löschung (Art. 17)</li>
+                <li>Einschränkung der Verarbeitung (Art. 18)</li>
+                <li>Datenübertragbarkeit (Art. 20)</li>
+                <li>Widerspruch gegen die Verarbeitung (Art. 21)</li>
+            </ul>
+            <p>Wenden Sie sich hierzu an den oben genannten Verantwortlichen.</p>
+            <p>Sie können sich außerdem bei der Österreichischen Datenschutzbehörde (www.dsb.gv.at) beschweren.</p>
+            
+            <h3>7. Änderungen dieser Erklärung</h3>
+            <p>Technische oder rechtliche Änderungen können eine Anpassung dieser Datenschutzerklärung erforderlich machen.</p>
+            <p><strong>Stand:</strong> Juli 2025</p>
+        </div>
+    </div>
+    
+    <!-- Impressum Modal -->
+    <div class="modal" id="impressumModal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="closeImpressumModal()">&times;</button>
+            
+            <h2>IMPRESSUM</h2>
+            
+            <h3>Kontaktinformationen</h3>
+            <p>
+                <strong>Sven Nussbaumer</strong><br>
+                Hummel 40<br>
+                6941 Langenegg<br>
+                Österreich
+            </p>
+            
+            <h3>Kommunikation</h3>
+            <p>
+                <strong>Telefon:</strong> +43 660 4897258<br>
+                <strong>E-Mail:</strong> office@archviz-nussbaumer.at
+            </p>
+            
+            <h3>Steuerliche Informationen</h3>
+            <p><strong>UID-Nummer:</strong> ATU79613802</p>
+            
+            <h3>Hinweis</h3>
+            <p>Sven Nussbaumer ist als Einzelunternehmer tätig und unterliegt den gesetzlichen Bestimmungen des österreichischen Unternehmensgesetzbuches (UGB) und des Bundesgesetzes über die Gewerbeordnung (GewO).</p>
+            
+            <h3>Urheberrecht</h3>
+            <p>Alle Inhalte dieser Website, insbesondere Texte, Bilder, Grafiken, Ton-, Video- und Animationsdateien sind urheberrechtlich geschützt. Jede Vervielfältigung, Verbreitung, Speicherung und jede Art der Verwendung bedarf der vorherigen schriftlichen Zustimmung von Sven Nussbaumer.</p>
+            
+            <h3>Haftung</h3>
+            <p>Sven Nussbaumer übernimmt keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.</p>
+            
+            <h3>Gültigkeit des Impressums</h3>
+            <p>Dieses Impressum gilt auch für die Social-Media-Präsenzen von Sven Nussbaumer.</p>
+            
+            <h3>Stand</h3>
+            <p>Juli 2024</p>
+            
+            <h3>Copyright</h3>
+            <p><strong>© 2024 Sven Nussbaumer. Alle Rechte vorbehalten.</strong></p>
+        </div>
+    </div>
     <div class="download-container">
         <div class="logo-container">
             <img src="https://lh3.googleusercontent.com/d/1fNKjcrw-kfyaROxy53ALujdpNpmhMQOT" 
@@ -232,40 +584,143 @@
             <div class="contact-info">
                 <a href="mailto:office@archviz-nussbaumer.at">office@archviz-nussbaumer.at</a> | 
                 <a href="tel:+436604897258">+43 660 4897258</a><br>
-                6941 Langenegg, Österreich
+                6941 Langenegg, Österreich<br>
+                <a href="#" onclick="showPrivacyModal(); return false;" class="privacy-link">Datenschutzerklärung</a> | 
+                <a href="#" onclick="showImpressumModal(); return false;" class="privacy-link">Impressum</a>
             </div>
         </div>
     </div>
 
     <script>
+        // Einfacher Cookie-Hinweis (nur Information, kein Consent erforderlich)
+        function showCookieNotice() {
+            const notice = document.getElementById('cookieNotice');
+            const noticeShown = localStorage.getItem('cookieNoticeShown');
+            
+            // Hinweis nur anzeigen, wenn noch nicht gezeigt (30 Tage Gültigkeit)
+            if (!noticeShown || isNoticeExpired(noticeShown)) {
+                setTimeout(() => {
+                    notice.classList.remove('hidden');
+                    notice.classList.add('show');
+                }, 1000);
+            }
+        }
+        
+        function hideCookieNotice() {
+            const notice = document.getElementById('cookieNotice');
+            notice.classList.remove('show');
+            setTimeout(() => {
+                notice.classList.add('hidden');
+            }, 300);
+            
+            // Zeitstempel speichern (technisch notwendig für UX)
+            localStorage.setItem('cookieNoticeShown', Date.now().toString());
+        }
+        
+        function isNoticeExpired(timestamp) {
+            const thirtyDaysAgo = Date.now() - (30 * 24 * 60 * 60 * 1000);
+            return parseInt(timestamp) < thirtyDaysAgo;
+        }
+        
+        // Modal Funktionen
+        function showPrivacyModal() {
+            document.getElementById('privacyModal').classList.add('show');
+        }
+        
+        function closePrivacyModal() {
+            document.getElementById('privacyModal').classList.remove('show');
+        }
+        
+        function showImpressumModal() {
+            document.getElementById('impressumModal').classList.add('show');
+        }
+        
+        function closeImpressumModal() {
+            document.getElementById('impressumModal').classList.remove('show');
+        }
+        
+        // Modal schließen bei Klick außerhalb des Inhalts
+        window.addEventListener('click', function(event) {
+            const privacyModal = document.getElementById('privacyModal');
+            const impressumModal = document.getElementById('impressumModal');
+            if (event.target === privacyModal) {
+                closePrivacyModal();
+            }
+            if (event.target === impressumModal) {
+                closeImpressumModal();
+            }
+        });
+        
+        // Modal schließen mit Escape-Taste
+        window.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closePrivacyModal();
+                closeImpressumModal();
+            }
+        });
+
+        // Variable zum Verhindern von doppelten Downloads
+        let downloadStarted = false;
+
         // URL-Parameter auslesen
         function getUrlParameter(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
         }
 
-        // Hauptfunktion
+        // Erweiterte Fehlerbehandlung mit Diagnostik
+        function showExtendedError(downloadUrl, jobNumber, folderName, zipName, expiryDate) {
+            let errorMsg = 'Keine Download-URL gefunden.';
+            
+            const allParams = new URLSearchParams(window.location.search);
+            const paramInfo = [];
+            for (const [key, value] of allParams.entries()) {
+                paramInfo.push(`${key}=${value.substring(0, 50)}${value.length > 50 ? '...' : ''}`);
+            }
+            
+            if (paramInfo.length > 0) {
+                errorMsg += '<br><br><strong>Gefundene Parameter:</strong><br>' + paramInfo.join('<br>');
+            } else {
+                errorMsg += '<br><br>Keine URL-Parameter gefunden. Bitte verwenden Sie den Link aus Ihrer E-Mail.';
+            }
+            
+            return `
+                <div class="download-error">
+                    <h2>⚠️ Download-Fehler</h2>
+                    <p>${errorMsg}</p>
+                </div>
+                <p style="color: #666; margin: 20px 0;">Falls der automatische Download nicht funktioniert:</p>
+                <button class="download-btn" onclick="window.location.reload()">🔄 Seite neu laden</button>
+            `;
+        }
+
+        // Hauptfunktion mit verbesserter Fehlerbehandlung
         function initDownload() {
+            // Cookie-Hinweis anzeigen (nur Information)
+            showCookieNotice();
+            
+            // "Verstanden" Button Event-Listener
+            document.getElementById('cookieOkBtn').addEventListener('click', hideCookieNotice);
+
             const downloadUrl = getUrlParameter('download');
             const jobNumber = getUrlParameter('job');
             const folderName = getUrlParameter('folder');
             const zipName = getUrlParameter('zipname');
             const expiryDate = getUrlParameter('expiry');
 
-            console.log('URL-Parameter:', { downloadUrl, jobNumber, folderName, zipName, expiryDate });
+            // DEBUG: Parameter anzeigen
+            console.log('URL Parameters Debug:');
+            console.log('- download:', downloadUrl);
+            console.log('- job:', jobNumber);
+            console.log('- folder:', folderName);
+            console.log('- zipname:', zipName);
+            console.log('- expiry:', expiryDate);
 
             const contentDiv = document.getElementById('download-content');
 
             if (!downloadUrl || !jobNumber) {
-                // Fehler anzeigen
-                contentDiv.innerHTML = `
-                    <div class="download-error">
-                        <h2>⚠️ Download-Fehler</h2>
-                        <p>Keine Download-URL gefunden. Bitte verwenden Sie den Link aus Ihrer E-Mail.</p>
-                    </div>
-                    <p style="color: #666; margin: 20px 0;">Falls der automatische Download nicht funktioniert:</p>
-                    <button class="download-btn" onclick="window.location.reload()">⬇️ Manuell herunterladen</button>
-                `;
+                // Erweiterte Fehlerbehandlung anzeigen
+                contentDiv.innerHTML = showExtendedError(downloadUrl, jobNumber, folderName, zipName, expiryDate);
                 return;
             }
 
@@ -276,7 +731,7 @@
 
             contentDiv.innerHTML = `
                 <div class="download-success">
-                    <h2>✅ Download wird gestartet</h2>
+                    <h2><span class="spinner"></span>Download wird gestartet</h2>
                     <p style="color: #666; margin-top: 10px;">Ihre Visualisierungen werden automatisch heruntergeladen</p>
                 </div>
                 
@@ -291,25 +746,52 @@
                 </a>
             `;
 
-            // Automatischer Download nach 2 Sekunden
+            // Automatischer Download nach 2 Sekunden mit verbesserter Fehlerbehandlung
             setTimeout(() => {
-                console.log('Starte automatischen Download:', downloadUrl);
+                if (downloadStarted) {
+                    console.log('⚠️ Download bereits gestartet - überspringe weiteren Download');
+                    return;
+                }
                 
-                // Download über versteckten Link
-                const link = document.createElement('a');
-                link.href = downloadUrl;
-                link.download = fileName; // Verwendet echten ZIP-Namen
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                console.log('Download-Link ausgelöst');
+                try {
+                    downloadStarted = true;
+                    console.log('🚀 Starte automatischen Download:', downloadUrl);
+                    
+                    // Download über versteckten iframe (wie in Target-Version)
+                    document.getElementById('downloadFrame').src = downloadUrl;
+                    
+                    // Erfolgs-Status anzeigen
+                    setTimeout(() => {
+                        const successDiv = contentDiv.querySelector('.download-success');
+                        if (successDiv) {
+                            successDiv.innerHTML = `
+                                <h2>✅ Download gestartet!</h2>
+                                <p style="color: #666; margin-top: 10px;">Download sollte in Ihrem Browser gestartet sein</p>
+                            `;
+                        }
+                    }, 1000);
+                    
+                    console.log('Download-iframe ausgelöst');
+                } catch (error) {
+                    downloadStarted = false;
+                    console.error('Download-Fehler:', error);
+                    
+                    // Fehler anzeigen
+                    const successDiv = contentDiv.querySelector('.download-success');
+                    if (successDiv) {
+                        successDiv.innerHTML = `
+                            <div class="download-error">
+                                <h2>⚠️ Download-Fehler</h2>
+                                <p>Download konnte nicht gestartet werden. Bitte versuchen Sie den manuellen Download.</p>
+                            </div>
+                        `;
+                    }
+                }
             }, 2000);
         }
 
         // Beim Laden der Seite starten
-        window.addEventListener('load', initDownload);
+        window.addEventListener('DOMContentLoaded', initDownload);
     </script>
 </body>
 </html>
