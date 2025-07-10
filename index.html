@@ -378,239 +378,9 @@
             color: #333 !important;
         }
         
-        /* Preview Button */
-        .preview-btn {
-            background: linear-gradient(135deg, #2c5aa0, #3a7bd5);
-            color: white;
-            border: none;
-            padding: 18px 40px;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 300;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            margin: 15px 10px;
-            text-transform: uppercase;
-        }
+
         
-        .preview-btn:hover {
-            background: linear-gradient(135deg, #1e3a5f, #2c5aa0);
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(60,123,213,0.3);
-        }
-        
-        .preview-btn:disabled {
-            background: #cccccc;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
-        
-        /* Bildergalerie Modal */
-        .gallery-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.95);
-            z-index: 10002;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-        }
-        
-        .gallery-modal.show {
-            display: flex;
-        }
-        
-        .gallery-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            background: #000;
-        }
-        
-        .gallery-header {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.8);
-            color: white;
-            padding: 15px 20px;
-            z-index: 10003;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            backdrop-filter: blur(10px);
-        }
-        
-        .gallery-title {
-            font-size: 18px;
-            font-weight: 300;
-            flex: 1;
-        }
-        
-        .gallery-counter {
-            font-size: 14px;
-            color: #ccc;
-            margin: 0 20px;
-        }
-        
-        .gallery-close {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 5px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            transition: background 0.2s ease;
-        }
-        
-        .gallery-close:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .gallery-main {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .gallery-image {
-            max-width: 95%;
-            max-height: 95%;
-            object-fit: contain;
-            transition: transform 0.3s ease;
-            cursor: zoom-in;
-        }
-        
-        .gallery-image.zoomed {
-            cursor: zoom-out;
-            transform: scale(2);
-        }
-        
-        .gallery-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            border: none;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            font-size: 24px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(5px);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .gallery-nav:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: translateY(-50%) scale(1.1);
-        }
-        
-        .gallery-nav:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: translateY(-50%);
-        }
-        
-        .gallery-prev {
-            left: 20px;
-        }
-        
-        .gallery-next {
-            right: 20px;
-        }
-        
-        .gallery-loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 18px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        .gallery-spinner {
-            width: 30px;
-            height: 30px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-top: 3px solid white;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-        
-        .gallery-thumbnails {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            backdrop-filter: blur(10px);
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-        
-        .gallery-thumbnails::-webkit-scrollbar {
-            height: 5px;
-        }
-        
-        .gallery-thumbnails::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.1);
-        }
-        
-        .gallery-thumbnails::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
-        }
-        
-        .gallery-thumb {
-            display: inline-block;
-            width: 80px;
-            height: 60px;
-            object-fit: cover;
-            margin-right: 10px;
-            border-radius: 4px;
-            cursor: pointer;
-            opacity: 0.6;
-            transition: all 0.2s ease;
-            border: 2px solid transparent;
-        }
-        
-        .gallery-thumb:hover {
-            opacity: 0.8;
-        }
-        
-        .gallery-thumb.active {
-            opacity: 1;
-            border-color: #007bff;
-        }
+
 
         @media (max-width: 480px) {
             .download-container {
@@ -641,43 +411,6 @@
             .privacy-table {
                 font-size: 12px;
             }
-            
-            .gallery-nav {
-                width: 50px;
-                height: 50px;
-                font-size: 20px;
-            }
-            
-            .gallery-prev {
-                left: 10px;
-            }
-            
-            .gallery-next {
-                right: 10px;
-            }
-            
-            .gallery-header {
-                padding: 10px 15px;
-            }
-            
-            .gallery-title {
-                font-size: 16px;
-            }
-            
-            .gallery-counter {
-                font-size: 12px;
-                margin: 0 10px;
-            }
-            
-            .gallery-thumbnails {
-                padding: 10px;
-            }
-            
-            .gallery-thumb {
-                width: 60px;
-                height: 45px;
-                margin-right: 8px;
-            }
         }
     </style>
 </head>
@@ -687,7 +420,7 @@
     
     <!-- Einfacher Cookie-Hinweis (nur Information, kein Consent erforderlich) -->
     <div id="cookieNotice" class="cookie-notice hidden" role="dialog" aria-live="polite">
-        <p>🍪 Diese Website setzt ausschließlich technisch notwendige Cookies. 
+        <p>Diese Website setzt ausschließlich technisch notwendige Cookies. 
            Mehr Informationen in der <a href="#" onclick="showPrivacyModal(); return false;">Datenschutzerklärung</a>.</p>
         <button id="cookieOkBtn">Verstanden</button>
     </div>
@@ -837,36 +570,7 @@
             <p><strong>© 2024 Sven Nussbaumer. Alle Rechte vorbehalten.</strong></p>
         </div>
     </div>
-    
-    <!-- Bildergalerie Modal -->
-    <div class="gallery-modal" id="galleryModal">
-        <div class="gallery-container">
-            <div class="gallery-header">
-                <div class="gallery-title" id="galleryTitle">Bildvorschau</div>
-                <div class="gallery-counter" id="galleryCounter">1 / 1</div>
-                <button class="gallery-close" onclick="closeGallery()">&times;</button>
-            </div>
-            
-            <div class="gallery-main">
-                <div class="gallery-loading" id="galleryLoading">
-                    <div class="gallery-spinner"></div>
-                    <span>Bilder werden geladen...</span>
-                </div>
-                
-                <img class="gallery-image" id="galleryImage" style="display: none;" 
-                     onclick="toggleZoom()" alt="Bildvorschau">
-                
-                <button class="gallery-nav gallery-prev" id="galleryPrev" 
-                        onclick="previousImage()" style="display: none;">‹</button>
-                <button class="gallery-nav gallery-next" id="galleryNext" 
-                        onclick="nextImage()" style="display: none;">›</button>
-            </div>
-            
-            <div class="gallery-thumbnails" id="galleryThumbnails" style="display: none;">
-                <!-- Thumbnails werden hier eingefügt -->
-            </div>
-        </div>
-    </div>
+
     
     <div class="download-container">
         <div class="logo-container">
@@ -898,7 +602,6 @@
         </div>
     </div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
         // Einfacher Cookie-Hinweis (nur Information, kein Consent erforderlich)
         function showCookieNotice() {
@@ -952,17 +655,11 @@
             if (event.key === 'Escape') {
                 closePrivacyModal();
                 closeImpressumModal();
-                closeGallery();
             }
         });
 
         // Variable zum Verhindern von doppelten Downloads
         let downloadStarted = false;
-        
-        // Bildergalerie Variablen
-        let galleryImages = [];
-        let currentImageIndex = 0;
-        let isZoomed = false;
 
         // URL-Parameter auslesen
         function getUrlParameter(name) {
@@ -970,342 +667,16 @@
             return urlParams.get(name);
         }
 
-        // Bildergalerie Funktionen
-        async function openImagePreview(zipUrl, projectName) {
-            const previewBtn = document.getElementById('previewBtn');
-            const galleryModal = document.getElementById('galleryModal');
-            const galleryLoading = document.getElementById('galleryLoading');
-            const galleryTitle = document.getElementById('galleryTitle');
-            
-            try {
-                // Button deaktivieren
-                previewBtn.disabled = true;
-                previewBtn.textContent = '⏳ Lade Bilder...';
-                
-                // Modal anzeigen
-                galleryModal.classList.add('show');
-                galleryTitle.textContent = `Vorschau: ${projectName}`;
-                galleryLoading.style.display = 'flex';
-                
-                // ZIP-Datei herunterladen mit CORS-Fallback
-                console.log('🖼️ Lade ZIP für Bildvorschau:', zipUrl);
-                
-                let response;
-                let zipData;
-                
-                try {
-                    // Versuch 1: Direkter Fetch
-                    response = await fetch(zipUrl);
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    zipData = await response.arrayBuffer();
-                } catch (fetchError) {
-                    console.warn('Direkter Fetch fehlgeschlagen, versuche Proxy-Methode:', fetchError.message);
-                    
-                    // Versuch 2: Mit no-cors Mode (limitiert, aber möglich)
-                    try {
-                        response = await fetch(zipUrl, { mode: 'no-cors' });
-                        // no-cors erlaubt keinen direkten Zugriff auf Response
-                        throw new Error('CORS-Beschränkung aktiv');
-                    } catch (corsError) {
-                        // Versuch 3: Über versteckten iframe und alternative Anzeige
-                        console.warn('CORS-Problem erkannt, zeige alternative Lösung');
-                        showCorsAlternative(zipUrl, projectName);
-                        return;
-                    }
-                }
-                
-                const zip = await JSZip.loadAsync(zipData);
-                
-                // Bild-Dateien extrahieren
-                const imageFiles = [];
-                const supportedFormats = /\.(jpg|jpeg|png|gif|bmp|webp)$/i;
-                
-                zip.forEach((relativePath, file) => {
-                    if (!file.dir && supportedFormats.test(relativePath)) {
-                        imageFiles.push({
-                            name: relativePath,
-                            file: file
-                        });
-                    }
-                });
-                
-                if (imageFiles.length === 0) {
-                    throw new Error('Keine Bilddateien im ZIP gefunden');
-                }
-                
-                // Bilder nach Namen sortieren
-                imageFiles.sort((a, b) => a.name.localeCompare(b.name));
-                
-                // Erste 20 Bilder laden (Performance)
-                const maxImages = Math.min(imageFiles.length, 20);
-                galleryImages = [];
-                
-                for (let i = 0; i < maxImages; i++) {
-                    const imageFile = imageFiles[i];
-                    try {
-                        const blob = await imageFile.file.async('blob');
-                        const url = URL.createObjectURL(blob);
-                        galleryImages.push({
-                            url: url,
-                            name: imageFile.name,
-                            index: i
-                        });
-                    } catch (err) {
-                        console.warn('Fehler beim Laden von', imageFile.name, err);
-                    }
-                }
-                
-                if (galleryImages.length === 0) {
-                    throw new Error('Keine Bilder konnten geladen werden');
-                }
-                
-                // Galerie initialisieren
-                currentImageIndex = 0;
-                setupGallery();
-                showImage(0);
-                
-                console.log(`✅ ${galleryImages.length} Bilder geladen`);
-                
-            } catch (error) {
-                console.error('Fehler beim Laden der Bildvorschau:', error);
-                showCorsAlternative(zipUrl, projectName, error.message);
-            } finally {
-                // Button wieder aktivieren
-                previewBtn.disabled = false;
-                previewBtn.textContent = '📱 Vorschau im Browser';
-            }
-        }
-        
-        function showCorsAlternative(zipUrl, projectName, errorMsg = null) {
-            const galleryLoading = document.getElementById('galleryLoading');
-            const galleryTitle = document.getElementById('galleryTitle');
-            
-            galleryTitle.textContent = `Info: ${projectName}`;
-            
-            let infoText = `
-                <div style="color: white; text-align: center; padding: 40px; max-width: 600px;">
-                    <h3 style="color: #ffc107; margin-bottom: 20px;">🔒 Browser-Sicherheitseinstellung</h3>
-                    <p style="margin-bottom: 20px; line-height: 1.6;">
-                        Die Bildvorschau kann aufgrund von Browser-Sicherheitsrichtlinien nicht direkt geladen werden.
-                    </p>
-                    <p style="margin-bottom: 30px; line-height: 1.6;">
-                        <strong>Alternative:</strong> Laden Sie das ZIP herunter und öffnen Sie die Bilder lokal.
-                    </p>
-                    <div style="margin: 30px 0;">
-                        <a href="${zipUrl}" 
-                           style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 10px;"
-                           download>
-                            📥 ZIP herunterladen
-                        </a>
-                        <button onclick="closeGallery()" 
-                                style="background: #6c757d; color: white; padding: 15px 30px; border: none; border-radius: 6px; font-weight: bold; margin: 10px; cursor: pointer;">
-                            ❌ Schließen
-                        </button>
-                    </div>
-                    ${errorMsg ? `<p style="font-size: 12px; color: #ccc; margin-top: 20px;">Details: ${errorMsg}</p>` : ''}
-                </div>
-            `;
-            
-            galleryLoading.innerHTML = infoText;
-        }
-        
-        function setupGallery() {
-            const galleryLoading = document.getElementById('galleryLoading');
-            const galleryImage = document.getElementById('galleryImage');
-            const galleryPrev = document.getElementById('galleryPrev');
-            const galleryNext = document.getElementById('galleryNext');
-            const galleryThumbnails = document.getElementById('galleryThumbnails');
-            const galleryCounter = document.getElementById('galleryCounter');
-            
-            // Loading verstecken, Controls anzeigen
-            galleryLoading.style.display = 'none';
-            galleryImage.style.display = 'block';
-            galleryPrev.style.display = 'flex';
-            galleryNext.style.display = 'flex';
-            galleryThumbnails.style.display = 'block';
-            
-            // Thumbnails erstellen
-            galleryThumbnails.innerHTML = '';
-            galleryImages.forEach((img, index) => {
-                const thumb = document.createElement('img');
-                thumb.src = img.url;
-                thumb.className = 'gallery-thumb';
-                thumb.onclick = () => showImage(index);
-                if (index === 0) thumb.classList.add('active');
-                galleryThumbnails.appendChild(thumb);
-            });
-            
-            // Counter aktualisieren
-            galleryCounter.textContent = `1 / ${galleryImages.length}`;
-            
-            // Keyboard Navigation
-            document.addEventListener('keydown', handleKeyboard);
-            
-            // Touch Navigation für Mobile
-            setupTouchNavigation();
-        }
-        
-        function showImage(index) {
-            if (index < 0 || index >= galleryImages.length) return;
-            
-            const galleryImage = document.getElementById('galleryImage');
-            const galleryCounter = document.getElementById('galleryCounter');
-            const galleryPrev = document.getElementById('galleryPrev');
-            const galleryNext = document.getElementById('galleryNext');
-            
-            currentImageIndex = index;
-            galleryImage.src = galleryImages[index].url;
-            galleryImage.alt = galleryImages[index].name;
-            
-            // Zoom zurücksetzen
-            isZoomed = false;
-            galleryImage.classList.remove('zoomed');
-            
-            // Counter aktualisieren
-            galleryCounter.textContent = `${index + 1} / ${galleryImages.length}`;
-            
-            // Navigation Buttons
-            galleryPrev.disabled = index === 0;
-            galleryNext.disabled = index === galleryImages.length - 1;
-            
-            // Thumbnails aktualisieren
-            document.querySelectorAll('.gallery-thumb').forEach((thumb, i) => {
-                thumb.classList.toggle('active', i === index);
-            });
-            
-            // Aktiven Thumbnail in Sichtbereich scrollen
-            const activeThumb = document.querySelector('.gallery-thumb.active');
-            if (activeThumb) {
-                activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-            }
-        }
-        
-        function previousImage() {
-            if (currentImageIndex > 0) {
-                showImage(currentImageIndex - 1);
-            }
-        }
-        
-        function nextImage() {
-            if (currentImageIndex < galleryImages.length - 1) {
-                showImage(currentImageIndex + 1);
-            }
-        }
-        
-        function toggleZoom() {
-            const galleryImage = document.getElementById('galleryImage');
-            isZoomed = !isZoomed;
-            galleryImage.classList.toggle('zoomed', isZoomed);
-        }
-        
-        function handleKeyboard(event) {
-            if (!document.getElementById('galleryModal').classList.contains('show')) return;
-            
-            switch (event.key) {
-                case 'Escape':
-                    closeGallery();
-                    break;
-                case 'ArrowLeft':
-                    previousImage();
-                    break;
-                case 'ArrowRight':
-                    nextImage();
-                    break;
-                case ' ':
-                    event.preventDefault();
-                    toggleZoom();
-                    break;
-            }
-        }
-        
-        function setupTouchNavigation() {
-            const galleryMain = document.querySelector('.gallery-main');
-            let startX = null;
-            let startY = null;
-            
-            galleryMain.addEventListener('touchstart', (e) => {
-                startX = e.touches[0].clientX;
-                startY = e.touches[0].clientY;
-            });
-            
-            galleryMain.addEventListener('touchend', (e) => {
-                if (!startX || !startY) return;
-                
-                const endX = e.changedTouches[0].clientX;
-                const endY = e.changedTouches[0].clientY;
-                const deltaX = startX - endX;
-                const deltaY = startY - endY;
-                
-                // Minimum swipe distance
-                if (Math.abs(deltaX) < 50 && Math.abs(deltaY) < 50) return;
-                
-                // Horizontal swipe (mehr horizontal als vertikal)
-                if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    if (deltaX > 0) {
-                        // Swipe left - next image
-                        nextImage();
-                    } else {
-                        // Swipe right - previous image
-                        previousImage();
-                    }
-                }
-                
-                startX = null;
-                startY = null;
-            });
-        }
-        
-        function closeGallery() {
-            const galleryModal = document.getElementById('galleryModal');
-            const galleryImage = document.getElementById('galleryImage');
-            const galleryPrev = document.getElementById('galleryPrev');
-            const galleryNext = document.getElementById('galleryNext');
-            const galleryThumbnails = document.getElementById('galleryThumbnails');
-            const galleryLoading = document.getElementById('galleryLoading');
-            
-            // Modal verstecken
-            galleryModal.classList.remove('show');
-            
-            // Aufräumen
-            galleryImages.forEach(img => {
-                if (img.url.startsWith('blob:')) {
-                    URL.revokeObjectURL(img.url);
-                }
-            });
-            galleryImages = [];
-            
-            // Controls zurücksetzen
-            galleryImage.style.display = 'none';
-            galleryPrev.style.display = 'none';
-            galleryNext.style.display = 'none';
-            galleryThumbnails.style.display = 'none';
-            galleryLoading.style.display = 'flex';
-            galleryThumbnails.innerHTML = '';
-            
-            // Zoom zurücksetzen
-            isZoomed = false;
-            galleryImage.classList.remove('zoomed');
-            
-            // Event Listener entfernen
-            document.removeEventListener('keydown', handleKeyboard);
-        }
-        
         // Modal schließen bei Klick außerhalb des Bildes
         window.addEventListener('click', function(event) {
             const privacyModal = document.getElementById('privacyModal');
             const impressumModal = document.getElementById('impressumModal');
-            const galleryModal = document.getElementById('galleryModal');
             
             if (event.target === privacyModal) {
                 closePrivacyModal();
             }
             if (event.target === impressumModal) {
                 closeImpressumModal();
-            }
-            if (event.target === galleryModal) {
-                closeGallery();
             }
         });
 
@@ -1327,11 +698,11 @@
             
             return `
                 <div class="download-error">
-                    <h2>⚠️ Download-Fehler</h2>
+                    <h2>Download-Fehler</h2>
                     <p>${errorMsg}</p>
                 </div>
                 <p style="color: #666; margin: 20px 0;">Falls der automatische Download nicht funktioniert:</p>
-                <button class="download-btn" onclick="window.location.reload()">🔄 Seite neu laden</button>
+                <button class="download-btn" onclick="window.location.reload()">Seite neu laden</button>
             `;
         }
 
@@ -1377,18 +748,14 @@
                 </div>
                 
                 <div class="file-info">
-                    <div class="file-name">📁 ${displayName}</div>
+                    <div class="file-name">${displayName}</div>
                     <div class="file-details">Gültig bis: ${expiryText}</div>
                 </div>
                 
                 <p style="color: #666; margin: 25px 0;">Falls der automatische Download nicht funktioniert:</p>
                 <a href="${downloadUrl}" class="download-btn" download="${fileName}">
-                    ⬇️ Manuell herunterladen
+                    Manuell herunterladen
                 </a>
-                <br>
-                <button class="preview-btn" id="previewBtn" onclick="openImagePreview('${downloadUrl}', '${displayName}')">
-                    📱 Vorschau im Browser
-                </button>
             `;
 
             // Automatischer Download nach 2 Sekunden mit verbesserter Fehlerbehandlung
@@ -1410,7 +777,7 @@
                         const successDiv = contentDiv.querySelector('.download-success');
                         if (successDiv) {
                             successDiv.innerHTML = `
-                                <h2>✅ Download gestartet!</h2>
+                                <h2>Download gestartet!</h2>
                                 <p style="color: #666; margin-top: 10px;">Download sollte in Ihrem Browser gestartet sein</p>
                             `;
                         }
@@ -1426,7 +793,7 @@
                     if (successDiv) {
                         successDiv.innerHTML = `
                             <div class="download-error">
-                                <h2>⚠️ Download-Fehler</h2>
+                                <h2>Download-Fehler</h2>
                                 <p>Download konnte nicht gestartet werden. Bitte versuchen Sie den manuellen Download.</p>
                             </div>
                         `;
