@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 50%, #1a1a1a 100%);
+            background: linear-gradient(135deg, #1e3a5f 0%, #2c5aa0 50%, #3a7bd5 100%);
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -48,7 +48,7 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #666666, #333333);
+            background: linear-gradient(90deg, #2c5aa0, #3a7bd5);
         }
 
         .logo-container {
@@ -70,7 +70,7 @@
         .logo-fallback {
             width: 80px;
             height: 80px;
-            background: linear-gradient(135deg, #333333, #666666);
+            background: linear-gradient(135deg, #2c5aa0, #3a7bd5);
             border-radius: 8px;
             display: none;
             align-items: center;
@@ -152,7 +152,7 @@
         }
 
         .download-btn {
-            background: linear-gradient(135deg, #333333, #666666);
+            background: linear-gradient(135deg, #2c5aa0, #3a7bd5);
             color: white;
             border: none;
             padding: 18px 40px;
@@ -169,9 +169,9 @@
         }
 
         .download-btn:hover {
-            background: linear-gradient(135deg, #555555, #888888);
+            background: linear-gradient(135deg, #1e3a5f, #2c5aa0);
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 20px rgba(60,123,213,0.3);
         }
 
         .footer {
@@ -190,12 +190,12 @@
         }
 
         .contact-info a {
-            color: #666666;
+            color: #2c5aa0;
             text-decoration: none;
         }
 
         .contact-info a:hover {
-            color: #333333;
+            color: #1e3a5f;
         }
         
         /* Spinner Animation */
@@ -203,7 +203,7 @@
             width: 20px;
             height: 20px;
             border: 2px solid #e3e3e3;
-            border-top: 2px solid #666666;
+            border-top: 2px solid #2c5aa0;
             border-radius: 50%;
             animation: spin 1s linear infinite;
             display: inline-block;
@@ -248,7 +248,7 @@
             min-width: 250px;
         }
         .cookie-notice a {
-            color: #666666;
+            color: #2c5aa0;
             text-decoration: none;
         }
         .cookie-notice a:hover {
@@ -258,7 +258,7 @@
             padding: 8px 16px;
             border: none;
             border-radius: 4px;
-            background: #666666;
+            background: #2c5aa0;
             color: white;
             font-size: 14px;
             font-weight: 600;
@@ -267,11 +267,11 @@
             white-space: nowrap;
         }
         .cookie-notice button:hover {
-            background: #555555;
+            background: #1e3a5f;
         }
         
         .privacy-link {
-            color: #666666;
+            color: #2c5aa0;
             text-decoration: none;
         }
         .privacy-link:hover {
@@ -380,7 +380,7 @@
         
         /* Preview Button */
         .preview-btn {
-            background: linear-gradient(135deg, #007bff, #0056b3);
+            background: linear-gradient(135deg, #2c5aa0, #3a7bd5);
             color: white;
             border: none;
             padding: 18px 40px;
@@ -397,9 +397,9 @@
         }
         
         .preview-btn:hover {
-            background: linear-gradient(135deg, #0056b3, #004085);
+            background: linear-gradient(135deg, #1e3a5f, #2c5aa0);
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0,123,255,0.3);
+            box-shadow: 0 8px 20px rgba(60,123,213,0.3);
         }
         
         .preview-btn:disabled {
@@ -987,15 +987,35 @@
                 galleryTitle.textContent = `Vorschau: ${projectName}`;
                 galleryLoading.style.display = 'flex';
                 
-                // ZIP-Datei herunterladen
+                // ZIP-Datei herunterladen mit CORS-Fallback
                 console.log('🖼️ Lade ZIP für Bildvorschau:', zipUrl);
-                const response = await fetch(zipUrl);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                let response;
+                let zipData;
+                
+                try {
+                    // Versuch 1: Direkter Fetch
+                    response = await fetch(zipUrl);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    zipData = await response.arrayBuffer();
+                } catch (fetchError) {
+                    console.warn('Direkter Fetch fehlgeschlagen, versuche Proxy-Methode:', fetchError.message);
+                    
+                    // Versuch 2: Mit no-cors Mode (limitiert, aber möglich)
+                    try {
+                        response = await fetch(zipUrl, { mode: 'no-cors' });
+                        // no-cors erlaubt keinen direkten Zugriff auf Response
+                        throw new Error('CORS-Beschränkung aktiv');
+                    } catch (corsError) {
+                        // Versuch 3: Über versteckten iframe und alternative Anzeige
+                        console.warn('CORS-Problem erkannt, zeige alternative Lösung');
+                        showCorsAlternative(zipUrl, projectName);
+                        return;
+                    }
                 }
                 
-                const zipData = await response.arrayBuffer();
                 const zip = await JSZip.loadAsync(zipData);
                 
                 // Bild-Dateien extrahieren
@@ -1050,13 +1070,45 @@
                 
             } catch (error) {
                 console.error('Fehler beim Laden der Bildvorschau:', error);
-                alert(`Bildvorschau konnte nicht geladen werden:\n${error.message}`);
-                closeGallery();
+                showCorsAlternative(zipUrl, projectName, error.message);
             } finally {
                 // Button wieder aktivieren
                 previewBtn.disabled = false;
                 previewBtn.textContent = '📱 Vorschau im Browser';
             }
+        }
+        
+        function showCorsAlternative(zipUrl, projectName, errorMsg = null) {
+            const galleryLoading = document.getElementById('galleryLoading');
+            const galleryTitle = document.getElementById('galleryTitle');
+            
+            galleryTitle.textContent = `Info: ${projectName}`;
+            
+            let infoText = `
+                <div style="color: white; text-align: center; padding: 40px; max-width: 600px;">
+                    <h3 style="color: #ffc107; margin-bottom: 20px;">🔒 Browser-Sicherheitseinstellung</h3>
+                    <p style="margin-bottom: 20px; line-height: 1.6;">
+                        Die Bildvorschau kann aufgrund von Browser-Sicherheitsrichtlinien nicht direkt geladen werden.
+                    </p>
+                    <p style="margin-bottom: 30px; line-height: 1.6;">
+                        <strong>Alternative:</strong> Laden Sie das ZIP herunter und öffnen Sie die Bilder lokal.
+                    </p>
+                    <div style="margin: 30px 0;">
+                        <a href="${zipUrl}" 
+                           style="background: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; margin: 10px;"
+                           download>
+                            📥 ZIP herunterladen
+                        </a>
+                        <button onclick="closeGallery()" 
+                                style="background: #6c757d; color: white; padding: 15px 30px; border: none; border-radius: 6px; font-weight: bold; margin: 10px; cursor: pointer;">
+                            ❌ Schließen
+                        </button>
+                    </div>
+                    ${errorMsg ? `<p style="font-size: 12px; color: #ccc; margin-top: 20px;">Details: ${errorMsg}</p>` : ''}
+                </div>
+            `;
+            
+            galleryLoading.innerHTML = infoText;
         }
         
         function setupGallery() {
