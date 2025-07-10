@@ -534,41 +534,39 @@
             <button class="close-btn" onclick="closeImpressumModal()">&times;</button>
             
             <h2>IMPRESSUM</h2>
+            <p><small>(gemäß § 5 ECG, § 14 UGB, § 63 GewO)</small></p>
             
-            <h3>Kontaktinformationen</h3>
             <p>
-                <strong>Sven Nussbaumer</strong><br>
+                <strong>Sven Nussbaumer – archVIZ | Nussbaumer</strong><br>
                 Hummel 40<br>
-                6941 Langenegg<br>
-                Österreich
+                A-6941 Langenegg, Österreich
             </p>
             
-            <h3>Kommunikation</h3>
             <p>
-                <strong>Telefon:</strong> +43 660 4897258<br>
-                <strong>E-Mail:</strong> office@archviz-nussbaumer.at
+                <strong>Telefon:</strong> +43 660 489 72 58<br>
+                <strong>E-Mail:</strong> office@archviz-nussbaumer.at<br>
+                <strong>Web:</strong> www.archviz-nussbaumer.at
             </p>
             
-            <h3>Steuerliche Informationen</h3>
-            <p><strong>UID-Nummer:</strong> ATU79613802</p>
+            <p>
+                <strong>UID-Nr.:</strong> ATU 79613802
+            </p>
             
-            <h3>Hinweis</h3>
-            <p>Sven Nussbaumer ist als Einzelunternehmer tätig und unterliegt den gesetzlichen Bestimmungen des österreichischen Unternehmensgesetzbuches (UGB) und des Bundesgesetzes über die Gewerbeordnung (GewO).</p>
+            <p>
+                <strong>Zuständige Gewerbebehörde:</strong> Bezirkshauptmannschaft Bregenz
+            </p>
             
-            <h3>Urheberrecht</h3>
-            <p>Alle Inhalte dieser Website, insbesondere Texte, Bilder, Grafiken, Ton-, Video- und Animationsdateien sind urheberrechtlich geschützt. Jede Vervielfältigung, Verbreitung, Speicherung und jede Art der Verwendung bedarf der vorherigen schriftlichen Zustimmung von Sven Nussbaumer.</p>
+            <p>
+                <strong>Mitglied der Wirtschaftskammer Vorarlberg, Fachgruppe Werbung & Marktkommunikation</strong>
+            </p>
             
-            <h3>Haftung</h3>
-            <p>Sven Nussbaumer übernimmt keine Haftung für die Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich deren Betreiber verantwortlich.</p>
+            <p>
+                <strong>(Einzelunternehmen – nicht im Firmenbuch eingetragen)</strong>
+            </p>
             
-            <h3>Gültigkeit des Impressums</h3>
-            <p>Dieses Impressum gilt auch für die Social-Media-Präsenzen von Sven Nussbaumer.</p>
+            <hr style="margin: 20px 0; border: none; border-top: 1px solid #ddd;">
             
-            <h3>Stand</h3>
-            <p>Juli 2024</p>
-            
-            <h3>Copyright</h3>
-            <p><strong>© 2024 Sven Nussbaumer. Alle Rechte vorbehalten.</strong></p>
+            <p><strong>Stand:</strong> 10. Juli 2025</p>
         </div>
     </div>
 
@@ -669,6 +667,107 @@
             return urlParams.get(name);
         }
 
+        // Prüft ob der Download-Link abgelaufen ist
+        function isDownloadExpired(expiryDate) {
+            if (!expiryDate) {
+                return false; // Kein Ablaufdatum vorhanden
+            }
+            
+            try {
+                // Ablaufdatum parsen (Format: DD.MM.YYYY HH:MM, DD.MM.YYYY oder YYYY-MM-DD HH:MM)
+                const expiryDateDecoded = decodeURIComponent(expiryDate);
+                
+                let expiryDateTime;
+                
+                // Prüfe ob ISO-Format (YYYY-MM-DD HH:MM oder YYYY-MM-DD)
+                if (expiryDateDecoded.includes('-')) {
+                    if (expiryDateDecoded.includes(' ') && expiryDateDecoded.includes(':')) {
+                        // Format: YYYY-MM-DD HH:MM
+                        const [datePart, timePart] = expiryDateDecoded.split(' ');
+                        const dateParts = datePart.split('-');
+                        const timeParts = timePart.split(':');
+                        
+                        if (dateParts.length !== 3 || timeParts.length !== 2) {
+                            console.log('⚠️ Unbekanntes ISO Datum/Zeit-Format:', expiryDateDecoded);
+                            return false;
+                        }
+                        
+                        const year = parseInt(dateParts[0]);
+                        const month = parseInt(dateParts[1]) - 1; // Monat ist 0-basiert in JS
+                        const day = parseInt(dateParts[2]);
+                        const hour = parseInt(timeParts[0]);
+                        const minute = parseInt(timeParts[1]);
+                        
+                        expiryDateTime = new Date(year, month, day, hour, minute, 0);
+                        
+                    } else {
+                        // Format: YYYY-MM-DD
+                        const parts = expiryDateDecoded.split('-');
+                        
+                        if (parts.length !== 3) {
+                            console.log('⚠️ Unbekanntes ISO Datumsformat:', expiryDateDecoded);
+                            return false;
+                        }
+                        
+                        const year = parseInt(parts[0]);
+                        const month = parseInt(parts[1]) - 1; // Monat ist 0-basiert in JS
+                        const day = parseInt(parts[2]);
+                        
+                        expiryDateTime = new Date(year, month, day, 23, 59, 59); // Ende des Tages
+                    }
+                    
+                } else {
+                    // Deutsches Format (DD.MM.YYYY HH:MM oder DD.MM.YYYY)
+                    if (expiryDateDecoded.includes(' ') && expiryDateDecoded.includes(':')) {
+                        // Format: DD.MM.YYYY HH:MM
+                        const [datePart, timePart] = expiryDateDecoded.split(' ');
+                        const dateParts = datePart.split('.');
+                        const timeParts = timePart.split(':');
+                        
+                        if (dateParts.length !== 3 || timeParts.length !== 2) {
+                            console.log('⚠️ Unbekanntes Datum/Zeit-Format:', expiryDateDecoded);
+                            return false;
+                        }
+                        
+                        const day = parseInt(dateParts[0]);
+                        const month = parseInt(dateParts[1]) - 1; // Monat ist 0-basiert in JS
+                        const year = parseInt(dateParts[2]);
+                        const hour = parseInt(timeParts[0]);
+                        const minute = parseInt(timeParts[1]);
+                        
+                        expiryDateTime = new Date(year, month, day, hour, minute, 0);
+                        
+                    } else {
+                        // Format: DD.MM.YYYY
+                        const parts = expiryDateDecoded.split('.');
+                        
+                        if (parts.length !== 3) {
+                            console.log('⚠️ Unbekanntes Datumsformat:', expiryDateDecoded);
+                            return false;
+                        }
+                        
+                        const day = parseInt(parts[0]);
+                        const month = parseInt(parts[1]) - 1; // Monat ist 0-basiert in JS
+                        const year = parseInt(parts[2]);
+                        
+                        expiryDateTime = new Date(year, month, day, 23, 59, 59); // Ende des Tages
+                    }
+                }
+                
+                const currentDateTime = new Date();
+                
+                console.log('📅 Ablaufdatum:', expiryDateTime.toLocaleString('de-DE'));
+                console.log('📅 Aktuelles Datum:', currentDateTime.toLocaleString('de-DE'));
+                console.log('📅 Abgelaufen?', currentDateTime > expiryDateTime);
+                
+                return currentDateTime > expiryDateTime;
+                
+            } catch (error) {
+                console.error('Fehler beim Parsen des Ablaufdatums:', error);
+                return false; // Bei Fehler nicht blockieren
+            }
+        }
+
         // Modal schließen bei Klick außerhalb des Bildes
         window.addEventListener('click', function(event) {
             const privacyModal = document.getElementById('privacyModal');
@@ -738,10 +837,31 @@
                 return;
             }
 
+            // Prüfe ob Download abgelaufen ist
+            if (isDownloadExpired(expiryDate)) {
+                console.log('⚠️ Download-Link ist abgelaufen');
+                contentDiv.innerHTML = `
+                    <div class="download-error">
+                        <h2>Download-Link abgelaufen</h2>
+                        <p>Der Download-Link ist leider abgelaufen. Bitte wenden Sie sich an archVIZ NUSSBAUMER für einen neuen Link.</p>
+                    </div>
+                    <div class="file-info">
+                        <div class="file-name">Projekt: ${jobNumber}</div>
+                        <div class="file-details">Ablaufdatum: ${expiryDate ? decodeURIComponent(expiryDate) : 'unbekannt'}</div>
+                    </div>
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
+                        <h3 style="color: #27211e; margin-bottom: 15px;">Kontakt für neuen Download-Link:</h3>
+                        <p style="color: #27211e; margin: 5px 0;"><strong>E-Mail:</strong> <a href="mailto:office@archviz-nussbaumer.at" style="color: #324158;">office@archviz-nussbaumer.at</a></p>
+                        <p style="color: #27211e; margin: 5px 0;"><strong>Telefon:</strong> <a href="tel:+436604897258" style="color: #324158;">+43 660 489 72 58</a></p>
+                    </div>
+                `;
+                return;
+            }
+
             // Erfolg anzeigen - verwende echten ZIP-Namen falls verfügbar
             const fileName = zipName ? decodeURIComponent(zipName) : `Projekt_${jobNumber}.zip`;
             const displayName = zipName ? decodeURIComponent(zipName) : (folderName ? `${decodeURIComponent(folderName)}.zip` : `${jobNumber}.zip`);
-            const expiryText = expiryDate ? new Date(expiryDate).toLocaleDateString('de-DE') : 'unbekannt';
+            const expiryText = expiryDate ? decodeURIComponent(expiryDate) : 'unbekannt';
 
             contentDiv.innerHTML = `
                 <div class="download-success">
