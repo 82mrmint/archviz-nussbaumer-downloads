@@ -970,29 +970,20 @@
                     throw new Error('Download-URL fehlt in den URL-Parametern');
                 }
 
-                // Erfolg anzeigen mit entschlüsselten Daten
+                // Minimalistische Anzeige: Nur Datei und Gültig bis
                 const displayName = jobData.zipFileName || `${jobData.folderName}.zip`;
-                const projectType = jobData.isPreview ? 'Vorschaubilder' : 'Finale Visualisierungen';
-
                 contentDiv.innerHTML = `
                     <div class="download-success">
                         <h2><span class="spinner"></span>Download wird gestartet</h2>
-                        <p style="color: #666; margin-top: 10px;">Ihre Visualisierungen werden automatisch heruntergeladen</p>
+                        <p style="color: #666; margin-top: 10px;">Ihre Datei wird automatisch heruntergeladen</p>
                     </div>
-                    
                     <div class="file-info">
-                        <div class="file-name">${jobData.jobName}</div>
-                        <div class="file-details">
-                            <strong>Kunde:</strong> ${jobData.customerName}<br>
-                            <strong>Typ:</strong> ${projectType}<br>
-                            <strong>Datei:</strong> ${displayName}<br>
-                            <strong>Gültig bis:</strong> ${expiryDate.toLocaleString('de-DE')}
-                        </div>
+                        <div class="file-name"><strong>Datei:</strong> ${displayName}</div>
+                        <div class="file-details"><strong>Gültig bis:</strong> ${expiryDate.toLocaleString('de-DE')}</div>
                     </div>
-                    
                     <p style="color: #666; margin: 25px 0;">Falls der automatische Download nicht funktioniert:</p>
                     <a href="${decodeURIComponent(downloadUrl)}" class="download-btn" download="${displayName}">
-                        Manuell herunterladen
+                        Herunterladen
                     </a>
                 `;
 
