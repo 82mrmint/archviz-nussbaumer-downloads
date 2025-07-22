@@ -680,40 +680,96 @@
         // Azure URL-Bereinigung und -Reparatur
         function cleanAzureUrl(url) {
             try {
-                // Entferne mehrfache URL-Encodierung
-                let cleanUrl = url;
+                console.log('🔧 URL-Bereinigung gestartet...');
+                console.log('📝 Originale URL Länge:', url.length);
                 
-                // Mehrfache Dekodierung falls nötig
-                for (let i = 0; i < 3; i++) {
+                // SCHRITT 1: Mehrfache URL-Decodierung
+                let cleanUrl = url;
+                let decodingAttempts = 0;
+                
+                while (decodingAttempts < 5) { // Maximal 5 Dekodierungsversuche
                     try {
                         let decoded = decodeURIComponent(cleanUrl);
-                        if (decoded === cleanUrl) break; // Keine weitere Dekodierung möglich
+                        if (decoded === cleanUrl) {
+                            console.log(`✅ Dekodierung abgeschlossen nach ${decodingAttempts} Versuchen`);
+                            break; // Keine weitere Dekodierung möglich
+                        }
                         cleanUrl = decoded;
+                        decodingAttempts++;
+                        console.log(`🔄 Dekodierung ${decodingAttempts}:`, cleanUrl.substring(0, 100) + '...');
                     } catch (e) {
+                        console.log(`⚠️ Dekodierung ${decodingAttempts + 1} fehlgeschlagen:`, e.message);
                         break; // Dekodierung fehlgeschlagen
                     }
                 }
                 
-                // Repariere häufige Azure Blob Storage URL-Probleme
+                // SCHRITT 2: Azure SAS-Token spezifische Reparaturen
                 cleanUrl = cleanUrl
                     .replace(/\s+/g, '') // Entferne alle Leerzeichen
                     .replace(/&amp;/g, '&') // HTML-Entitäten reparieren
                     .replace(/&lt;/g, '<')
                     .replace(/&gt;/g, '>')
-                    .replace(/&quot;/g, '"');
+                    .replace(/&quot;/g, '"')
+                    .replace(/%253A/g, '%3A') // Doppelt encodierte Doppelpunkte
+                    .replace(/%252F/g, '%2F') // Doppelt encodierte Schrägstriche
+                    .replace(/%253D/g, '%3D') // Doppelt encodierte Gleichheitszeichen
+                    .replace(/%252B/g, '%2B'); // Doppelt encodierte Plus-Zeichen
                 
-                // Prüfe auf doppelte Parameter
-                if (cleanUrl.includes('?') && cleanUrl.lastIndexOf('?') !== cleanUrl.indexOf('?')) {
+                // SCHRITT 3: Azure Blob Storage URL-Pattern Validation
+                if (cleanUrl.includes('blob.core.windows.net')) {
+                    console.log('✅ Azure Blob Storage URL erkannt');
+                    
+                    // Repariere SAS-Token Parameter
+                    if (cleanUrl.includes('?')) {
+                        const [baseUrl, params] = cleanUrl.split('?', 2);
+                        const paramParts = params.split('&');
+                        
+                        console.log('🔧 SAS-Token Parameter gefunden:', paramParts.length);
+                        
+                        // Repariere jeden Parameter einzeln
+                        const repairedParams = paramParts.map(param => {
+                            if (param.includes('=')) {
+                                let [key, value] = param.split('=', 2);
+                                
+                                // Spezielle SAS-Token Reparaturen
+                                if (key === 'sig') {
+                                    // Signature Parameter - sehr wichtig für Authentication
+                                    value = value
+                                        .replace(/%2B/g, '+') // Plus-Zeichen
+                                        .replace(/%2F/g, '/') // Schrägstriche
+                                        .replace(/%3D/g, '='); // Gleichheitszeichen
+                                    console.log('🔑 Signature repariert:', value.substring(0, 20) + '...');
+                                } else if (key === 'se' || key === 'st') {
+                                    // Expiry/Start Time Parameter
+                                    value = value.replace(/%3A/g, ':'); // Doppelpunkte
+                                    console.log(`📅 ${key} repariert:`, value);
+                                }
+                                
+                                return `${key}=${value}`;
+                            }
+                            return param;
+                        });
+                        
+                        cleanUrl = baseUrl + '?' + repairedParams.join('&');
+                    }
+                }
+                
+                // SCHRITT 4: Final validation und cleanup
+                if (cleanUrl.includes('??')) {
                     // Mehrere ? gefunden - repariere URL
                     const parts = cleanUrl.split('?');
                     cleanUrl = parts[0] + '?' + parts.slice(1).join('&');
+                    console.log('🔧 Doppelte Fragezeichen repariert');
                 }
                 
-                console.log('✅ URL bereinigt:', cleanUrl.length, 'Zeichen');
+                console.log('✅ URL-Bereinigung abgeschlossen');
+                console.log('📏 Finale URL Länge:', cleanUrl.length);
+                console.log('🎯 Bereinigte URL (erste 150 Zeichen):', cleanUrl.substring(0, 150) + '...');
+                
                 return cleanUrl;
                 
             } catch (error) {
-                console.warn('⚠️ URL-Bereinigung fehlgeschlagen:', error);
+                console.error('❌ URL-Bereinigung komplett fehlgeschlagen:', error);
                 return url; // Originale URL zurückgeben
             }
         }
@@ -722,9 +778,77 @@
         function tryDirectLinkMethod(downloadUrl, fileName, contentDiv) {
             console.log('🎯 Versuche direkten Link-Download...');
             
-            // Erstelle temporären Download-Link
+            // Spezielle Behandlung für Azure Blob Storage URLs
+            let finalUrl = downloadUrl;
+            if (downloadUrl.includes('blob.core.windows.net')) {
+                console.log('🔵 Azure Blob Storage URL erkannt - verwende spezielle Behandlung');
+                
+                // Versuche verschiedene URL-Formate
+                const urlVariants = [
+                    downloadUrl, // Original
+                    downloadUrl.replace(/&/g, '&'), // Standard Ampersand
+                    downloadUrl.split('?')[0] + '?' + downloadUrl.split('?').slice(1).join('&') // URL-Parameter reparieren
+                ];
+                
+                // Teste jede URL-Variante
+                for (let i = 0; i < urlVariants.length; i++) {
+                    console.log(`🔍 Teste URL-Variante ${i + 1}:`, urlVariants[i].substring(0, 100) + '...');
+                    
+                    try {
+                        // Erstelle temporären Download-Link für jede Variante
+                        const tempLink = document.createElement('a');
+                        tempLink.href = urlVariants[i];
+                        tempLink.download = fileName;
+                        tempLink.style.display = 'none';
+                        tempLink.setAttribute('target', '_blank');
+                        tempLink.setAttribute('rel', 'noopener noreferrer');
+                        
+                        // Setze spezielle Attribute für Azure
+                        tempLink.setAttribute('crossorigin', 'anonymous');
+                        
+                        document.body.appendChild(tempLink);
+                        
+                        // Simuliere Klick
+                        tempLink.click();
+                        
+                        updateDownloadStatus(contentDiv, 'success', 'Download gestartet!', 
+                            `Azure-Download (Variante ${i + 1}) wurde ausgelöst. Falls nichts passiert, versuchen Sie den manuellen Download.`);
+                        
+                        // Link nach kurzer Zeit entfernen
+                        setTimeout(() => {
+                            if (document.body.contains(tempLink)) {
+                                document.body.removeChild(tempLink);
+                            }
+                        }, 2000);
+                        
+                        // Nach erfolgreicher Ausführung: Fallback nach 5 Sekunden
+                        setTimeout(() => {
+                            console.log('⏰ Fallback-Timer für Azure-Download ausgelöst');
+                            tryWindowOpenMethod(downloadUrl, fileName, contentDiv);
+                        }, 5000);
+                        
+                        return; // Erfolgreich ausgeführt
+                        
+                    } catch (error) {
+                        console.warn(`🔄 URL-Variante ${i + 1} fehlgeschlagen:`, error);
+                        
+                        // Cleanup bei Fehler
+                        try {
+                            if (document.body.contains(tempLink)) {
+                                document.body.removeChild(tempLink);
+                            }
+                        } catch (e) { /* Ignorieren */ }
+                        
+                        continue; // Nächste Variante versuchen
+                    }
+                }
+                
+                console.warn('⚠️ Alle Azure URL-Varianten fehlgeschlagen');
+            }
+            
+            // Standard-Direktlink für Non-Azure URLs oder als Fallback
             const tempLink = document.createElement('a');
-            tempLink.href = downloadUrl;
+            tempLink.href = finalUrl;
             tempLink.download = fileName;
             tempLink.style.display = 'none';
             tempLink.setAttribute('target', '_blank');
@@ -752,7 +876,7 @@
                 }, 3000);
                 
             } catch (error) {
-                console.warn('🔄 Direkter Link fehlgeschlagen:', error);
+                console.warn('🔄 Standard-Direkter Link fehlgeschlagen:', error);
                 document.body.removeChild(tempLink);
                 tryWindowOpenMethod(downloadUrl, fileName, contentDiv);
             }
