@@ -665,6 +665,122 @@
         // Variable zum Verhindern von doppelten Downloads
         let downloadStarted = false;
         
+        // Robuste Download-Funktion für Azure Blob Storage URLs
+        function startRobustDownload(downloadUrl, fileName, contentDiv) {
+            console.log('🔗 Original URL:', downloadUrl.substring(0, 100) + '...');
+            
+            // Methode 1: Fetch API mit besserer Fehlerbehandlung
+            fetch(downloadUrl, {
+                method: 'GET',
+                mode: 'cors',
+                cache: 'no-cache'
+            })
+            .then(response => {
+                console.log('📡 Fetch Response Status:', response.status);
+                console.log('📡 Fetch Response Headers:', [...response.headers.entries()]);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                return response.blob();
+            })
+            .then(blob => {
+                console.log('✅ Blob erhalten:', blob.size, 'bytes');
+                
+                // Erstelle Download-Link mit Blob
+                const blobUrl = window.URL.createObjectURL(blob);
+                const downloadLink = document.createElement('a');
+                downloadLink.href = blobUrl;
+                downloadLink.download = fileName;
+                downloadLink.style.display = 'none';
+                
+                document.body.appendChild(downloadLink);
+                downloadLink.click();
+                document.body.removeChild(downloadLink);
+                
+                // Blob URL nach kurzer Zeit freigeben
+                setTimeout(() => {
+                    window.URL.revokeObjectURL(blobUrl);
+                }, 5000);
+                
+                // Erfolgs-Status anzeigen
+                updateDownloadStatus(contentDiv, 'success', 'Download gestartet!', 'Die Datei sollte in Ihrem Browser heruntergeladen werden.');
+                
+            })
+            .catch(fetchError => {
+                console.warn('🔄 Fetch fehlgeschlagen:', fetchError.message);
+                
+                // Fallback: Window.open Methode
+                tryWindowOpenDownload(downloadUrl, fileName, contentDiv);
+            });
+        }
+        
+        // Fallback-Methode: Window.open
+        function tryWindowOpenDownload(downloadUrl, fileName, contentDiv) {
+            console.log('🔄 Versuche window.open Methode...');
+            
+            try {
+                // Öffne URL in neuem Tab/Fenster
+                const downloadWindow = window.open(downloadUrl, '_blank');
+                
+                if (downloadWindow) {
+                    updateDownloadStatus(contentDiv, 'success', 'Download gestartet!', 'Ein neuer Tab wurde geöffnet. Falls der Download nicht automatisch startet, speichern Sie die Datei manuell.');
+                    
+                    // Tab nach 5 Sekunden wieder schließen (falls möglich)
+                    setTimeout(() => {
+                        try {
+                            if (downloadWindow && !downloadWindow.closed) {
+                                downloadWindow.close();
+                            }
+                        } catch (e) {
+                            // Ignorieren - Tab kann eventuell nicht geschlossen werden
+                        }
+                    }, 5000);
+                    
+                } else {
+                    throw new Error('Popup wurde blockiert');
+                }
+                
+            } catch (windowError) {
+                console.warn('🔄 Window.open fehlgeschlagen:', windowError.message);
+                
+                // Fallback: iframe Methode
+                tryIframeDownload(downloadUrl, fileName, contentDiv);
+            }
+        }
+        
+        // Fallback-Methode: Iframe (ursprüngliche Methode)
+        function tryIframeDownload(downloadUrl, fileName, contentDiv) {
+            console.log('🔄 Versuche iframe Methode...');
+            
+            try {
+                const iframe = document.getElementById('downloadFrame');
+                iframe.src = downloadUrl;
+                
+                updateDownloadStatus(contentDiv, 'success', 'Download versucht', 'Falls der Download nicht funktioniert, verwenden Sie bitte den manuellen Download-Button.');
+                
+            } catch (iframeError) {
+                console.error('❌ Alle Download-Methoden fehlgeschlagen:', iframeError);
+                
+                updateDownloadStatus(contentDiv, 'error', 'Download-Fehler', 
+                    'Automatischer Download nicht möglich. Bitte verwenden Sie den manuellen Download-Button oder kontaktieren Sie archVIZ NUSSBAUMER.');
+            }
+        }
+        
+        // Hilfsfunktion um Download-Status zu aktualisieren
+        function updateDownloadStatus(contentDiv, type, title, message) {
+            const successDiv = contentDiv.querySelector('.download-success');
+            if (successDiv) {
+                const statusClass = type === 'error' ? 'download-error' : 'download-success';
+                successDiv.className = statusClass;
+                successDiv.innerHTML = `
+                    <h2>${title}</h2>
+                    <p style="color: #666; margin-top: 10px;">${message}</p>
+                `;
+            }
+        }
+        
         // Client-Side Job-Token Decoder (KEIN BACKEND BENÖTIGT!)
         const ENCRYPTION_KEY = 'archviz_nussbaumer_2025_secure_key';
 
@@ -998,40 +1114,12 @@
                         return;
                     }
                     
-                    try {
-                        downloadStarted = true;
-                        console.log('🚀 Starte automatischen Download:', downloadUrl);
-                        
-                        // Download über versteckten iframe
-                        document.getElementById('downloadFrame').src = decodeURIComponent(downloadUrl);
-                        
-                        // Erfolgs-Status anzeigen
-                        setTimeout(() => {
-                            const successDiv = contentDiv.querySelector('.download-success');
-                            if (successDiv) {
-                                successDiv.innerHTML = `
-                                    <h2>Download gestartet!</h2>
-                                    <p style="color: #666; margin-top: 10px;">Download sollte in Ihrem Browser gestartet sein</p>
-                                `;
-                            }
-                        }, 1000);
-                        
-                        console.log('✅ Download-iframe ausgelöst');
-                    } catch (error) {
-                        downloadStarted = false;
-                        console.error('Download-Fehler:', error);
-                        
-                        // Fehler anzeigen
-                        const successDiv = contentDiv.querySelector('.download-success');
-                        if (successDiv) {
-                            successDiv.innerHTML = `
-                                <div class="download-error">
-                                    <h2>Download-Fehler</h2>
-                                    <p>Download konnte nicht gestartet werden. Bitte versuchen Sie den manuellen Download.</p>
-                                </div>
-                            `;
-                        }
-                    }
+                    downloadStarted = true;
+                    console.log('🚀 Starte automatischen Download:', downloadUrl);
+                    
+                    // FIXED: Robuste Download-Methode mit Fehlerbehandlung für Azure Blob Storage
+                    startRobustDownload(decodeURIComponent(downloadUrl), displayName, contentDiv);
+                    
                 }, 2000);
 
             } catch (error) {
@@ -1099,22 +1187,12 @@
             setTimeout(() => {
                 if (downloadStarted) return;
                 
-                try {
-                    downloadStarted = true;
-                    document.getElementById('downloadFrame').src = downloadUrl;
-                    
-                    setTimeout(() => {
-                        const successDiv = contentDiv.querySelector('.download-success');
-                        if (successDiv) {
-                            successDiv.innerHTML = `
-                                <h2>Download gestartet!</h2>
-                                <p style="color: #666; margin-top: 10px;">Download sollte in Ihrem Browser gestartet sein</p>
-                            `;
-                        }
-                    }, 1000);
-                } catch (error) {
-                    console.error('Legacy-Download-Fehler:', error);
-                }
+                downloadStarted = true;
+                console.log('🚀 Starte Legacy-Download:', downloadUrl);
+                
+                // FIXED: Verwende neue robuste Download-Methode auch für Legacy
+                startRobustDownload(downloadUrl, fileName, contentDiv);
+                
             }, 2000);
         }
 
