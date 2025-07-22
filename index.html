@@ -667,6 +667,68 @@
             return urlParams.get(name);
         }
 
+        // Formatiert das Datum für die Anzeige
+        function formatExpiryDate(expiryDate) {
+            if (!expiryDate) return 'unbekannt';
+            
+            try {
+                const expiryDateDecoded = decodeURIComponent(expiryDate);
+                let expiryDateTime;
+                
+                // Prüfe ob ISO-Format (YYYY-MM-DD HH:MM oder YYYY-MM-DD)
+                if (expiryDateDecoded.includes('-')) {
+                    if (expiryDateDecoded.includes(' ') && expiryDateDecoded.includes(':')) {
+                        // Format: YYYY-MM-DD HH:MM
+                        const [datePart, timePart] = expiryDateDecoded.split(' ');
+                        const dateParts = datePart.split('-');
+                        const timeParts = timePart.split(':');
+                        
+                        if (dateParts.length === 3 && timeParts.length === 2) {
+                            const year = parseInt(dateParts[0]);
+                            const month = parseInt(dateParts[1]) - 1;
+                            const day = parseInt(dateParts[2]);
+                            const hour = parseInt(timeParts[0]);
+                            const minute = parseInt(timeParts[1]);
+                            
+                            expiryDateTime = new Date(year, month, day, hour, minute, 0);
+                            return expiryDateTime.toLocaleString('de-DE', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric', 
+                                hour: '2-digit', 
+                                minute: '2-digit' 
+                            });
+                        }
+                    } else {
+                        // Format: YYYY-MM-DD
+                        const parts = expiryDateDecoded.split('-');
+                        if (parts.length === 3) {
+                            const year = parseInt(parts[0]);
+                            const month = parseInt(parts[1]) - 1;
+                            const day = parseInt(parts[2]);
+                            
+                            expiryDateTime = new Date(year, month, day);
+                            return expiryDateTime.toLocaleDateString('de-DE', { 
+                                day: '2-digit', 
+                                month: '2-digit', 
+                                year: 'numeric' 
+                            });
+                        }
+                    }
+                } else {
+                    // Deutsches Format - bereits korrekt formatiert, nur zurückgeben
+                    return expiryDateDecoded;
+                }
+                
+                // Fallback: Original-String zurückgeben
+                return expiryDateDecoded;
+                
+            } catch (error) {
+                console.error('Fehler beim Formatieren des Ablaufdatums:', error);
+                return decodeURIComponent(expiryDate);
+            }
+        }
+
         // Prüft ob der Download-Link abgelaufen ist
         function isDownloadExpired(expiryDate) {
             if (!expiryDate) {
@@ -847,7 +909,7 @@
                     </div>
                     <div class="file-info">
                         <div class="file-name">Projekt: ${jobNumber}</div>
-                        <div class="file-details">Ablaufdatum: ${expiryDate ? decodeURIComponent(expiryDate) : 'unbekannt'}</div>
+                        <div class="file-details">Ablaufdatum: ${formatExpiryDate(expiryDate)}</div>
                     </div>
                     <div style="margin-top: 30px; padding: 20px; background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
                         <h3 style="color: #27211e; margin-bottom: 15px;">Kontakt für neuen Download-Link:</h3>
@@ -858,10 +920,25 @@
                 return;
             }
 
-            // Erfolg anzeigen - verwende echten ZIP-Namen falls verfügbar
-            const fileName = zipName ? decodeURIComponent(zipName) : `Projekt_${jobNumber}.zip`;
-            const displayName = zipName ? decodeURIComponent(zipName) : (folderName ? `${decodeURIComponent(folderName)}.zip` : `${jobNumber}.zip`);
-            const expiryText = expiryDate ? decodeURIComponent(expiryDate) : 'unbekannt';
+            // Erfolg anzeigen - verbesserte Dateinamen-Logik
+            let displayName;
+            if (zipName) {
+                // ZIP-Name verfügbar - verwende ihn direkt
+                displayName = decodeURIComponent(zipName);
+                // Stelle sicher, dass .zip Endung vorhanden ist
+                if (!displayName.toLowerCase().endsWith('.zip')) {
+                    displayName += '.zip';
+                }
+            } else if (folderName) {
+                // Folder-Name verfügbar - verwende als ZIP-Name
+                displayName = decodeURIComponent(folderName) + '.zip';
+            } else {
+                // Fallback: Job-Nummer verwenden
+                displayName = `Projekt_${jobNumber}.zip`;
+            }
+            
+            const fileName = displayName; // Für Download-Attribut
+            const formattedExpiryDate = formatExpiryDate(expiryDate);
 
             contentDiv.innerHTML = `
                 <div class="download-success">
@@ -871,7 +948,7 @@
                 
                 <div class="file-info">
                     <div class="file-name">${displayName}</div>
-                    <div class="file-details">Gültig bis: ${expiryText}</div>
+                    <div class="file-details">Gültig bis: ${formattedExpiryDate}</div>
                 </div>
                 
                 <p style="color: #666; margin: 25px 0;">Falls der automatische Download nicht funktioniert:</p>
