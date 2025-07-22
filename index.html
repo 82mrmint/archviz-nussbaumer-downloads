@@ -669,102 +669,236 @@
         function startRobustDownload(downloadUrl, fileName, contentDiv) {
             console.log('🔗 Original URL:', downloadUrl.substring(0, 100) + '...');
             
-            // Methode 1: Fetch API mit besserer Fehlerbehandlung
-            fetch(downloadUrl, {
-                method: 'GET',
-                mode: 'cors',
-                cache: 'no-cache'
-            })
-            .then(response => {
-                console.log('📡 Fetch Response Status:', response.status);
-                console.log('📡 Fetch Response Headers:', [...response.headers.entries()]);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                return response.blob();
-            })
-            .then(blob => {
-                console.log('✅ Blob erhalten:', blob.size, 'bytes');
-                
-                // Erstelle Download-Link mit Blob
-                const blobUrl = window.URL.createObjectURL(blob);
-                const downloadLink = document.createElement('a');
-                downloadLink.href = blobUrl;
-                downloadLink.download = fileName;
-                downloadLink.style.display = 'none';
-                
-                document.body.appendChild(downloadLink);
-                downloadLink.click();
-                document.body.removeChild(downloadLink);
-                
-                // Blob URL nach kurzer Zeit freigeben
-                setTimeout(() => {
-                    window.URL.revokeObjectURL(blobUrl);
-                }, 5000);
-                
-                // Erfolgs-Status anzeigen
-                updateDownloadStatus(contentDiv, 'success', 'Download gestartet!', 'Die Datei sollte in Ihrem Browser heruntergeladen werden.');
-                
-            })
-            .catch(fetchError => {
-                console.warn('🔄 Fetch fehlgeschlagen:', fetchError.message);
-                
-                // Fallback: Window.open Methode
-                tryWindowOpenDownload(downloadUrl, fileName, contentDiv);
-            });
+            // SCHRITT 1: URL-Bereinigung für Azure Blob Storage
+            let cleanedUrl = cleanAzureUrl(downloadUrl);
+            console.log('🧹 Bereinigte URL:', cleanedUrl.substring(0, 100) + '...');
+            
+            // SCHRITT 2: Versuche verschiedene Download-Strategien
+            tryDirectLinkMethod(cleanedUrl, fileName, contentDiv);
         }
         
-        // Fallback-Methode: Window.open
-        function tryWindowOpenDownload(downloadUrl, fileName, contentDiv) {
-            console.log('🔄 Versuche window.open Methode...');
-            
+        // Azure URL-Bereinigung und -Reparatur
+        function cleanAzureUrl(url) {
             try {
-                // Öffne URL in neuem Tab/Fenster
-                const downloadWindow = window.open(downloadUrl, '_blank');
+                // Entferne mehrfache URL-Encodierung
+                let cleanUrl = url;
                 
-                if (downloadWindow) {
-                    updateDownloadStatus(contentDiv, 'success', 'Download gestartet!', 'Ein neuer Tab wurde geöffnet. Falls der Download nicht automatisch startet, speichern Sie die Datei manuell.');
-                    
-                    // Tab nach 5 Sekunden wieder schließen (falls möglich)
-                    setTimeout(() => {
-                        try {
-                            if (downloadWindow && !downloadWindow.closed) {
-                                downloadWindow.close();
-                            }
-                        } catch (e) {
-                            // Ignorieren - Tab kann eventuell nicht geschlossen werden
-                        }
-                    }, 5000);
-                    
-                } else {
-                    throw new Error('Popup wurde blockiert');
+                // Mehrfache Dekodierung falls nötig
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        let decoded = decodeURIComponent(cleanUrl);
+                        if (decoded === cleanUrl) break; // Keine weitere Dekodierung möglich
+                        cleanUrl = decoded;
+                    } catch (e) {
+                        break; // Dekodierung fehlgeschlagen
+                    }
                 }
                 
-            } catch (windowError) {
-                console.warn('🔄 Window.open fehlgeschlagen:', windowError.message);
+                // Repariere häufige Azure Blob Storage URL-Probleme
+                cleanUrl = cleanUrl
+                    .replace(/\s+/g, '') // Entferne alle Leerzeichen
+                    .replace(/&amp;/g, '&') // HTML-Entitäten reparieren
+                    .replace(/&lt;/g, '<')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&quot;/g, '"');
                 
-                // Fallback: iframe Methode
-                tryIframeDownload(downloadUrl, fileName, contentDiv);
+                // Prüfe auf doppelte Parameter
+                if (cleanUrl.includes('?') && cleanUrl.lastIndexOf('?') !== cleanUrl.indexOf('?')) {
+                    // Mehrere ? gefunden - repariere URL
+                    const parts = cleanUrl.split('?');
+                    cleanUrl = parts[0] + '?' + parts.slice(1).join('&');
+                }
+                
+                console.log('✅ URL bereinigt:', cleanUrl.length, 'Zeichen');
+                return cleanUrl;
+                
+            } catch (error) {
+                console.warn('⚠️ URL-Bereinigung fehlgeschlagen:', error);
+                return url; // Originale URL zurückgeben
             }
         }
         
-        // Fallback-Methode: Iframe (ursprüngliche Methode)
-        function tryIframeDownload(downloadUrl, fileName, contentDiv) {
-            console.log('🔄 Versuche iframe Methode...');
+        // Methode 1: Direkter Link (am robustesten für Azure)
+        function tryDirectLinkMethod(downloadUrl, fileName, contentDiv) {
+            console.log('🎯 Versuche direkten Link-Download...');
+            
+            // Erstelle temporären Download-Link
+            const tempLink = document.createElement('a');
+            tempLink.href = downloadUrl;
+            tempLink.download = fileName;
+            tempLink.style.display = 'none';
+            tempLink.setAttribute('target', '_blank');
+            tempLink.setAttribute('rel', 'noopener noreferrer');
+            
+            document.body.appendChild(tempLink);
+            
+            try {
+                // Simuliere Klick
+                tempLink.click();
+                
+                updateDownloadStatus(contentDiv, 'success', 'Download gestartet!', 
+                    'Der Download wurde ausgelöst. Falls nichts passiert, versuchen Sie den manuellen Download.');
+                
+                // Link nach kurzer Zeit entfernen
+                setTimeout(() => {
+                    if (document.body.contains(tempLink)) {
+                        document.body.removeChild(tempLink);
+                    }
+                }, 2000);
+                
+                // Fallback nach 3 Sekunden falls kein Download
+                setTimeout(() => {
+                    tryWindowOpenMethod(downloadUrl, fileName, contentDiv);
+                }, 3000);
+                
+            } catch (error) {
+                console.warn('🔄 Direkter Link fehlgeschlagen:', error);
+                document.body.removeChild(tempLink);
+                tryWindowOpenMethod(downloadUrl, fileName, contentDiv);
+            }
+        }
+        
+        // Methode 2: Window.open mit verbesserter Logik
+        function tryWindowOpenMethod(downloadUrl, fileName, contentDiv) {
+            console.log('🪟 Versuche window.open Methode...');
+            
+            try {
+                // Verschiedene window.open Varianten versuchen
+                const methods = [
+                    () => window.open(downloadUrl, '_blank'),
+                    () => window.open(downloadUrl, '_self'),
+                    () => window.location.assign(downloadUrl)
+                ];
+                
+                let success = false;
+                
+                for (let i = 0; i < methods.length && !success; i++) {
+                    try {
+                        const result = methods[i]();
+                        if (result || i === 2) { // location.assign gibt undefined zurück
+                            updateDownloadStatus(contentDiv, 'success', 'Download gestartet!', 
+                                `Methode ${i + 1}: Download wurde in neuem Tab geöffnet oder weitergeleitet.`);
+                            success = true;
+                            
+                            // Bei window.open: Tab nach 8 Sekunden schließen
+                            if (result && typeof result.close === 'function') {
+                                setTimeout(() => {
+                                    try {
+                                        if (!result.closed) result.close();
+                                    } catch (e) { /* Ignorieren */ }
+                                }, 8000);
+                            }
+                            break;
+                        }
+                    } catch (e) {
+                        console.warn(`Window.open Methode ${i + 1} fehlgeschlagen:`, e);
+                    }
+                }
+                
+                if (!success) {
+                    throw new Error('Alle window.open Methoden fehlgeschlagen');
+                }
+                
+            } catch (error) {
+                console.warn('🔄 Window.open Methoden fehlgeschlagen:', error);
+                tryFetchMethod(downloadUrl, fileName, contentDiv);
+            }
+        }
+        
+        // Methode 3: Fetch mit verbesserter Fehlerbehandlung
+        function tryFetchMethod(downloadUrl, fileName, contentDiv) {
+            console.log('🌐 Versuche Fetch-API...');
+            
+            // Verschiedene Fetch-Optionen
+            const fetchConfigs = [
+                { mode: 'no-cors', cache: 'no-cache' },
+                { mode: 'cors', cache: 'no-cache' },
+                { mode: 'same-origin', cache: 'no-cache' },
+                {} // Standard-Optionen
+            ];
+            
+            let configIndex = 0;
+            
+            function tryNextConfig() {
+                if (configIndex >= fetchConfigs.length) {
+                    console.error('❌ Alle Fetch-Konfigurationen fehlgeschlagen');
+                    tryIframeMethod(downloadUrl, fileName, contentDiv);
+                    return;
+                }
+                
+                const config = fetchConfigs[configIndex++];
+                console.log(`🔧 Versuche Fetch-Konfiguration ${configIndex}:`, config);
+                
+                fetch(downloadUrl, config)
+                    .then(response => {
+                        console.log('📡 Fetch Response Status:', response.status);
+                        console.log('📡 Fetch Response Headers:', [...response.headers.entries()]);
+                        
+                        if (!response.ok && response.status !== 0) { // Status 0 ist bei no-cors normal
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        return response.blob();
+                    })
+                    .then(blob => {
+                        console.log('✅ Blob erhalten:', blob.size, 'bytes');
+                        
+                        if (blob.size === 0) {
+                            throw new Error('Leere Datei empfangen');
+                        }
+                        
+                        // Blob-Download erstellen
+                        const blobUrl = window.URL.createObjectURL(blob);
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = blobUrl;
+                        downloadLink.download = fileName;
+                        downloadLink.style.display = 'none';
+                        
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
+                        
+                        // Blob URL nach Zeit freigeben
+                        setTimeout(() => {
+                            window.URL.revokeObjectURL(blobUrl);
+                        }, 10000);
+                        
+                        updateDownloadStatus(contentDiv, 'success', 'Download gestartet!', 
+                            'Datei wurde über Fetch-API heruntergeladen.');
+                        
+                    })
+                    .catch(fetchError => {
+                        console.warn(`🔄 Fetch-Konfiguration ${configIndex} fehlgeschlagen:`, fetchError.message);
+                        
+                        // Versuche nächste Konfiguration nach kurzer Pause
+                        setTimeout(tryNextConfig, 500);
+                    });
+            }
+            
+            tryNextConfig();
+        }
+        
+        // Methode 4: iframe Fallback (letzte Option)
+        function tryIframeMethod(downloadUrl, fileName, contentDiv) {
+            console.log('�️ Versuche iframe Methode als letzten Ausweg...');
             
             try {
                 const iframe = document.getElementById('downloadFrame');
                 iframe.src = downloadUrl;
                 
-                updateDownloadStatus(contentDiv, 'success', 'Download versucht', 'Falls der Download nicht funktioniert, verwenden Sie bitte den manuellen Download-Button.');
+                updateDownloadStatus(contentDiv, 'warning', 'Download versucht', 
+                    'Iframe-Download wurde versucht. Falls nichts passiert, nutzen Sie bitte den manuellen Download-Button.');
+                
+                // Nach 5 Sekunden iframe zurücksetzen
+                setTimeout(() => {
+                    iframe.src = 'about:blank';
+                }, 5000);
                 
             } catch (iframeError) {
                 console.error('❌ Alle Download-Methoden fehlgeschlagen:', iframeError);
                 
-                updateDownloadStatus(contentDiv, 'error', 'Download-Fehler', 
-                    'Automatischer Download nicht möglich. Bitte verwenden Sie den manuellen Download-Button oder kontaktieren Sie archVIZ NUSSBAUMER.');
+                updateDownloadStatus(contentDiv, 'error', 'Automatischer Download fehlgeschlagen', 
+                    'Alle automatischen Download-Methoden sind fehlgeschlagen. Bitte verwenden Sie den manuellen Download-Button oder kontaktieren Sie archVIZ NUSSBAUMER für Unterstützung.');
             }
         }
         
@@ -772,7 +906,20 @@
         function updateDownloadStatus(contentDiv, type, title, message) {
             const successDiv = contentDiv.querySelector('.download-success');
             if (successDiv) {
-                const statusClass = type === 'error' ? 'download-error' : 'download-success';
+                let statusClass;
+                switch (type) {
+                    case 'error':
+                        statusClass = 'download-error';
+                        break;
+                    case 'warning':
+                        statusClass = 'download-success';
+                        title = '⚠️ ' + title;
+                        break;
+                    default:
+                        statusClass = 'download-success';
+                        break;
+                }
+                
                 successDiv.className = statusClass;
                 successDiv.innerHTML = `
                     <h2>${title}</h2>
