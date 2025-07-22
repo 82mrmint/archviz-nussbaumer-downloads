@@ -660,81 +660,11 @@
 
         // Variable zum Verhindern von doppelten Downloads
         let downloadStarted = false;
-        
-        // Client-Side Job-Token Decoder (KEIN BACKEND BENÖTIGT!)
-        const ENCRYPTION_KEY = 'archviz_nussbaumer_2025_secure_key';
 
         // URL-Parameter auslesen
         function getUrlParameter(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
-        }
-        
-        // Hilfsfunktionen für Base64URL
-        function base64UrlDecode(input) {
-            let base64 = input.replace(/-/g, '+').replace(/_/g, '/');
-            while (base64.length % 4 !== 0) {
-                base64 += '=';
-            }
-            return atob(base64);
-        }
-        
-        // XOR-Entschlüsselung (identisch mit PowerShell)
-        function simpleDecrypt(encryptedBase64, key) {
-            try {
-                const encryptedBytes = atob(encryptedBase64);
-                const keyBytes = new TextEncoder().encode(key);
-                let result = '';
-                
-                for (let i = 0; i < encryptedBytes.length; i++) {
-                    const encryptedByte = encryptedBytes.charCodeAt(i);
-                    const keyByte = keyBytes[i % keyBytes.length];
-                    result += String.fromCharCode(encryptedByte ^ keyByte);
-                }
-                
-                return result;
-            } catch (error) {
-                console.error('Entschlüsselung fehlgeschlagen:', error);
-                return null;
-            }
-        }
-        
-        // Job-Daten aus Token extrahieren (Client-Side!)
-        function getJobDataFromToken(jobToken) {
-            try {
-                console.log(`Token-Länge: ${jobToken.length} Zeichen`);
-                
-                const encryptedData = base64UrlDecode(jobToken);
-                console.log(`Base64URL decodiert: ${encryptedData.length} Bytes`);
-                
-                const decryptedJson = simpleDecrypt(encryptedData, ENCRYPTION_KEY);
-                console.log(`Entschlüsselt: ${decryptedJson ? 'Erfolg' : 'Fehler'}`);
-                
-                if (!decryptedJson) {
-                    throw new Error('Entschlüsselung fehlgeschlagen');
-                }
-                
-                const jobData = JSON.parse(decryptedJson);
-                console.log(`JSON geparst: ${Object.keys(jobData).join(', ')}`);
-                
-                const expiryDate = new Date(jobData.e);
-                if (new Date() > expiryDate) {
-                    throw new Error(`Job abgelaufen am ${expiryDate.toLocaleString('de-DE')}`);
-                }
-                
-                return {
-                    jobName: jobData.n,
-                    folderName: jobData.f,
-                    customerName: jobData.c,
-                    isPreview: jobData.p,
-                    zipFileName: jobData.z,
-                    expiryDate: jobData.e,
-                    created: jobData.t
-                };
-            } catch (error) {
-                console.log(`Token-Dekodierung-Fehler: ${error.message}`);
-                throw error;
-            }
         }
 
         // Prüft ob der Download-Link abgelaufen ist
@@ -852,8 +782,8 @@
         });
 
         // Erweiterte Fehlerbehandlung mit Diagnostik
-        function showExtendedError() {
-            let errorMsg = 'Ungültige Download-URL - Parameter fehlen.';
+        function showExtendedError(downloadUrl, jobNumber, folderName, zipName, expiryDate) {
+            let errorMsg = 'Keine Download-URL gefunden.';
             
             const allParams = new URLSearchParams(window.location.search);
             const paramInfo = [];
@@ -871,24 +801,13 @@
                 <div class="download-error">
                     <h2>Download-Fehler</h2>
                     <p>${errorMsg}</p>
-                    <p style="margin-top: 15px; color: #666;">
-                        <strong>Erwartetes URL-Format:</strong><br>
-                        <code style="font-size: 12px; background: #f5f5f5; padding: 5px; border-radius: 3px; display: block; margin-top: 5px;">
-                        ?job=12345678&data=verschluesselter_token&download=azure_url&expiry=datum
-                        </code>
-                    </p>
                 </div>
                 <p style="color: #666; margin: 20px 0;">Falls der automatische Download nicht funktioniert:</p>
                 <button class="download-btn" onclick="window.location.reload()">Seite neu laden</button>
-                <div style="margin-top: 30px; padding: 20px; background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
-                    <h3 style="color: #27211e; margin-bottom: 15px;">Kontakt bei Problemen:</h3>
-                    <p style="color: #27211e; margin: 5px 0;"><strong>E-Mail:</strong> <a href="mailto:office@archviz-nussbaumer.at" style="color: #324158;">office@archviz-nussbaumer.at</a></p>
-                    <p style="color: #27211e; margin: 5px 0;"><strong>Telefon:</strong> <a href="tel:+436604897258" style="color: #324158;">+43 660 489 72 58</a></p>
-                </div>
             `;
         }
 
-        // Hauptfunktion mit DSGVO-konformem Token-System
+        // Hauptfunktion mit verbesserter Fehlerbehandlung
         function initDownload() {
             // Cookie-Hinweis anzeigen (nur Information)
             showCookieNotice();
@@ -896,166 +815,31 @@
             // "Verstanden" Button Event-Listener
             document.getElementById('cookieOkBtn').addEventListener('click', hideCookieNotice);
 
-            // NEUE URL-Parameter für anonymes System
-            const jobId = getUrlParameter('job');        // Anonyme Job-ID (z.B. b6495a82)
-            const jobToken = getUrlParameter('data');    // Verschlüsselte Job-Daten
-            const downloadUrl = getUrlParameter('download'); // Download-URL
-            const expiryParam = getUrlParameter('expiry');  // Ablaufdatum
+            const downloadUrl = getUrlParameter('download');
+            const jobNumber = getUrlParameter('job');
+            const folderName = getUrlParameter('folder');
+            const zipName = getUrlParameter('zipname');
+            const expiryDate = getUrlParameter('expiry');
 
             // DEBUG: Parameter anzeigen
-            console.log('=== DSGVO-URL Debug ===');
-            console.log('- job (anonyme ID):', jobId);
-            console.log('- data (Token):', jobToken ? `${jobToken.substring(0, 20)}...` : 'nicht gefunden');
-            console.log('- download:', downloadUrl ? 'vorhanden' : 'nicht gefunden');
-            console.log('- expiry:', expiryParam);
+            console.log('URL Parameters Debug:');
+            console.log('- download:', downloadUrl);
+            console.log('- job:', jobNumber);
+            console.log('- folder:', folderName);
+            console.log('- zipname:', zipName);
+            console.log('- expiry:', expiryDate);
 
             const contentDiv = document.getElementById('download-content');
 
-            // Prüfe ob mindestens Job-ID und Token vorhanden sind
-            if (!jobId || !jobToken) {
-                console.log('❌ Fehlende Parameter - zeige Fallback für alte URLs');
-                
-                // Fallback: Prüfe alte URL-Parameter für Rückwärtskompatibilität
-                const oldDownloadUrl = getUrlParameter('download');
-                const oldJobNumber = getUrlParameter('job');
-                const oldFolderName = getUrlParameter('folder');
-                const oldZipName = getUrlParameter('zipname');
-                const oldExpiryDate = getUrlParameter('expiry');
-                
-                if (oldDownloadUrl && oldJobNumber) {
-                    console.log('✅ Verwende alte URL-Parameter');
-                    handleLegacyDownload(oldDownloadUrl, oldJobNumber, oldFolderName, oldZipName, oldExpiryDate);
-                    return;
-                }
-                
+            if (!downloadUrl || !jobNumber) {
                 // Erweiterte Fehlerbehandlung anzeigen
-                contentDiv.innerHTML = showExtendedError();
+                contentDiv.innerHTML = showExtendedError(downloadUrl, jobNumber, folderName, zipName, expiryDate);
                 return;
             }
 
-            try {
-                // Job-Daten aus verschlüsseltem Token extrahieren
-                console.log('🔓 Entschlüssele Job-Token...');
-                const jobData = getJobDataFromToken(jobToken);
-                
-                console.log('✅ Job-Daten erfolgreich entschlüsselt:');
-                console.log('- Projekt:', jobData.jobName);
-                console.log('- Kunde:', jobData.customerName);
-                console.log('- ZIP-Datei:', jobData.zipFileName);
-                console.log('- Ablauf:', jobData.expiryDate);
-
-                // Prüfe Ablaufdatum
-                const expiryDate = new Date(jobData.expiryDate);
-                if (new Date() > expiryDate) {
-                    console.log('⚠️ Download-Link ist abgelaufen');
-                    contentDiv.innerHTML = `
-                        <div class="download-error">
-                            <h2>Download-Link abgelaufen</h2>
-                            <p>Der Download-Link ist leider abgelaufen. Bitte wenden Sie sich an archVIZ NUSSBAUMER für einen neuen Link.</p>
-                        </div>
-                        <div class="file-info">
-                            <div class="file-name">Projekt: ${jobData.jobName}</div>
-                            <div class="file-details">Ablaufdatum: ${expiryDate.toLocaleString('de-DE')}</div>
-                        </div>
-                        <div style="margin-top: 30px; padding: 20px; background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
-                            <h3 style="color: #27211e; margin-bottom: 15px;">Kontakt für neuen Download-Link:</h3>
-                            <p style="color: #27211e; margin: 5px 0;"><strong>E-Mail:</strong> <a href="mailto:office@archviz-nussbaumer.at" style="color: #324158;">office@archviz-nussbaumer.at</a></p>
-                            <p style="color: #27211e; margin: 5px 0;"><strong>Telefon:</strong> <a href="tel:+436604897258" style="color: #324158;">+43 660 489 72 58</a></p>
-                        </div>
-                    `;
-                    return;
-                }
-
-                if (!downloadUrl) {
-                    throw new Error('Download-URL fehlt in den URL-Parametern');
-                }
-
-                // Minimalistische Anzeige: Nur Datei und Gültig bis
-                const displayName = jobData.zipFileName || `${jobData.folderName}.zip`;
-                contentDiv.innerHTML = `
-                    <div class="download-success">
-                        <h2><span class="spinner"></span>Download wird gestartet</h2>
-                        <p style="color: #666; margin-top: 10px;">Ihre Datei wird automatisch heruntergeladen</p>
-                    </div>
-                    <div class="file-info">
-                        <div class="file-name"><strong>Datei:</strong> ${displayName}</div>
-                        <div class="file-details"><strong>Gültig bis:</strong> ${expiryDate.toLocaleString('de-DE')}</div>
-                    </div>
-                    <p style="color: #666; margin: 25px 0;">Falls der automatische Download nicht funktioniert:</p>
-                    <a href="${decodeURIComponent(downloadUrl)}" class="download-btn" download="${displayName}">
-                        Herunterladen
-                    </a>
-                `;
-
-                // Automatischer Download nach 2 Sekunden
-                setTimeout(() => {
-                    if (downloadStarted) {
-                        console.log('⚠️ Download bereits gestartet - überspringe weiteren Download');
-                        return;
-                    }
-                    
-                    try {
-                        downloadStarted = true;
-                        console.log('🚀 Starte automatischen Download:', downloadUrl);
-                        
-                        // Download über versteckten iframe
-                        document.getElementById('downloadFrame').src = decodeURIComponent(downloadUrl);
-                        
-                        // Erfolgs-Status anzeigen
-                        setTimeout(() => {
-                            const successDiv = contentDiv.querySelector('.download-success');
-                            if (successDiv) {
-                                successDiv.innerHTML = `
-                                    <h2>Download gestartet!</h2>
-                                    <p style="color: #666; margin-top: 10px;">Download sollte in Ihrem Browser gestartet sein</p>
-                                `;
-                            }
-                        }, 1000);
-                        
-                        console.log('✅ Download-iframe ausgelöst');
-                    } catch (error) {
-                        downloadStarted = false;
-                        console.error('Download-Fehler:', error);
-                        
-                        // Fehler anzeigen
-                        const successDiv = contentDiv.querySelector('.download-success');
-                        if (successDiv) {
-                            successDiv.innerHTML = `
-                                <div class="download-error">
-                                    <h2>Download-Fehler</h2>
-                                    <p>Download konnte nicht gestartet werden. Bitte versuchen Sie den manuellen Download.</p>
-                                </div>
-                            `;
-                        }
-                    }
-                }, 2000);
-
-            } catch (error) {
-                console.error('❌ Fehler beim Verarbeiten der Job-Daten:', error);
-                contentDiv.innerHTML = `
-                    <div class="download-error">
-                        <h2>Fehler beim Laden der Projektdaten</h2>
-                        <p>Die Job-Daten konnten nicht entschlüsselt werden: ${error.message}</p>
-                        <p style="margin-top: 15px; color: #666;">Bitte verwenden Sie den originalen Link aus Ihrer E-Mail oder wenden Sie sich an archVIZ NUSSBAUMER.</p>
-                    </div>
-                    <div style="margin-top: 30px; padding: 20px; background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
-                        <h3 style="color: #27211e; margin-bottom: 15px;">Kontakt:</h3>
-                        <p style="color: #27211e; margin: 5px 0;"><strong>E-Mail:</strong> <a href="mailto:office@archviz-nussbaumer.at" style="color: #324158;">office@archviz-nussbaumer.at</a></p>
-                        <p style="color: #27211e; margin: 5px 0;"><strong>Telefon:</strong> <a href="tel:+436604897258" style="color: #324158;">+43 660 489 72 58</a></p>
-                    </div>
-                `;
-            }
-        }
-
-        // Fallback für alte URL-Struktur (Rückwärtskompatibilität)
-        function handleLegacyDownload(downloadUrl, jobNumber, folderName, zipName, expiryDate) {
-            console.log('🔄 Verwende Legacy-Download-Handler');
-            
-            const contentDiv = document.getElementById('download-content');
-
             // Prüfe ob Download abgelaufen ist
             if (isDownloadExpired(expiryDate)) {
-                console.log('⚠️ Legacy-Download-Link ist abgelaufen');
+                console.log('⚠️ Download-Link ist abgelaufen');
                 contentDiv.innerHTML = `
                     <div class="download-error">
                         <h2>Download-Link abgelaufen</h2>
@@ -1065,11 +849,16 @@
                         <div class="file-name">Projekt: ${jobNumber}</div>
                         <div class="file-details">Ablaufdatum: ${expiryDate ? decodeURIComponent(expiryDate) : 'unbekannt'}</div>
                     </div>
+                    <div style="margin-top: 30px; padding: 20px; background: rgba(108, 117, 125, 0.1); border-radius: 8px;">
+                        <h3 style="color: #27211e; margin-bottom: 15px;">Kontakt für neuen Download-Link:</h3>
+                        <p style="color: #27211e; margin: 5px 0;"><strong>E-Mail:</strong> <a href="mailto:office@archviz-nussbaumer.at" style="color: #324158;">office@archviz-nussbaumer.at</a></p>
+                        <p style="color: #27211e; margin: 5px 0;"><strong>Telefon:</strong> <a href="tel:+436604897258" style="color: #324158;">+43 660 489 72 58</a></p>
+                    </div>
                 `;
                 return;
             }
 
-            // Legacy-Erfolg anzeigen
+            // Erfolg anzeigen - verwende echten ZIP-Namen falls verfügbar
             const fileName = zipName ? decodeURIComponent(zipName) : `Projekt_${jobNumber}.zip`;
             const displayName = zipName ? decodeURIComponent(zipName) : (folderName ? `${decodeURIComponent(folderName)}.zip` : `${jobNumber}.zip`);
             const expiryText = expiryDate ? decodeURIComponent(expiryDate) : 'unbekannt';
@@ -1091,14 +880,21 @@
                 </a>
             `;
 
-            // Legacy automatischer Download
+            // Automatischer Download nach 2 Sekunden mit verbesserter Fehlerbehandlung
             setTimeout(() => {
-                if (downloadStarted) return;
+                if (downloadStarted) {
+                    console.log('⚠️ Download bereits gestartet - überspringe weiteren Download');
+                    return;
+                }
                 
                 try {
                     downloadStarted = true;
+                    console.log('🚀 Starte automatischen Download:', downloadUrl);
+                    
+                    // Download über versteckten iframe (wie in Target-Version)
                     document.getElementById('downloadFrame').src = downloadUrl;
                     
+                    // Erfolgs-Status anzeigen
                     setTimeout(() => {
                         const successDiv = contentDiv.querySelector('.download-success');
                         if (successDiv) {
@@ -1108,8 +904,22 @@
                             `;
                         }
                     }, 1000);
+                    
+                    console.log('Download-iframe ausgelöst');
                 } catch (error) {
-                    console.error('Legacy-Download-Fehler:', error);
+                    downloadStarted = false;
+                    console.error('Download-Fehler:', error);
+                    
+                    // Fehler anzeigen
+                    const successDiv = contentDiv.querySelector('.download-success');
+                    if (successDiv) {
+                        successDiv.innerHTML = `
+                            <div class="download-error">
+                                <h2>Download-Fehler</h2>
+                                <p>Download konnte nicht gestartet werden. Bitte versuchen Sie den manuellen Download.</p>
+                            </div>
+                        `;
+                    }
                 }
             }, 2000);
         }
