@@ -690,15 +690,40 @@
                 
                 // Versuche Job-Token zu dekodieren (XOR verschlüsselt)
                 const key = "archviz_nussbaumer_2025_secure_key";
+                
+                // Zuerst versuchen: Behandle decoded als Byte-Array
                 let decryptedData = "";
-                
-                for (let i = 0; i < decoded.length; i++) {
-                    const keyChar = key.charCodeAt(i % key.length);
-                    const dataChar = decoded.charCodeAt(i);
-                    decryptedData += String.fromCharCode(dataChar ^ keyChar);
+                try {
+                    // Konvertiere Base64-dekodierten String zu Byte-Array
+                    const bytes = new Uint8Array(decoded.length);
+                    for (let i = 0; i < decoded.length; i++) {
+                        bytes[i] = decoded.charCodeAt(i);
+                    }
+                    
+                    // XOR-Entschlüsselung auf Byte-Level
+                    const decryptedBytes = new Uint8Array(bytes.length);
+                    for (let i = 0; i < bytes.length; i++) {
+                        const keyByte = key.charCodeAt(i % key.length);
+                        decryptedBytes[i] = bytes[i] ^ keyByte;
+                    }
+                    
+                    // Konvertiere zurück zu String (UTF-8)
+                    decryptedData = new TextDecoder('utf-8').decode(decryptedBytes);
+                    
+                    console.log('🔐 Entschlüsselte Daten (UTF-8, erste 100 Zeichen):', decryptedData.substring(0, 100));
+                } catch (utf8Error) {
+                    console.log('⚠️ UTF-8 Dekodierung fehlgeschlagen, versuche simple XOR:', utf8Error.message);
+                    
+                    // Fallback: Simple Character-XOR wie vorher
+                    decryptedData = "";
+                    for (let i = 0; i < decoded.length; i++) {
+                        const keyChar = key.charCodeAt(i % key.length);
+                        const dataChar = decoded.charCodeAt(i);
+                        decryptedData += String.fromCharCode(dataChar ^ keyChar);
+                    }
+                    
+                    console.log('🔐 Entschlüsselte Daten (Simple XOR, erste 100 Zeichen):', decryptedData.substring(0, 100));
                 }
-                
-                console.log('🔐 Entschlüsselte Daten (erste 100 Zeichen):', decryptedData.substring(0, 100));
                 
                 // Versuche JSON zu parsen
                 try {
@@ -737,6 +762,37 @@
                         }
                     } catch (directJsonError) {
                         console.log('⚠️ Direct JSON parse auch fehlgeschlagen');
+                        
+                        // Zusätzlicher Debug: Versuche Windows-1252 Encoding
+                        try {
+                            console.log('🔍 Versuche alternative Entschlüsselung...');
+                            
+                            // Alternative XOR mit anderem Character-Handling
+                            let altDecrypted = "";
+                            for (let i = 0; i < decoded.length; i++) {
+                                const keyByte = key.charCodeAt(i % key.length) & 0xFF;
+                                const dataByte = decoded.charCodeAt(i) & 0xFF;
+                                const xorResult = dataByte ^ keyByte;
+                                altDecrypted += String.fromCharCode(xorResult);
+                            }
+                            
+                            console.log('🔐 Alternative Entschlüsselung (erste 100 Zeichen):', altDecrypted.substring(0, 100));
+                            
+                            const altJson = JSON.parse(altDecrypted);
+                            console.log('📋 Alternative JSON parse erfolgreich:', altJson);
+                            
+                            if (altJson.o) {
+                                console.log('✅ OriginalFileName aus Alternative JSON:', altJson.o);
+                                return altJson.o;
+                            }
+                            if (altJson.z) {
+                                console.log('📦 ZipFileName aus Alternative JSON:', altJson.z);
+                                return altJson.z;
+                            }
+                            
+                        } catch (altError) {
+                            console.log('⚠️ Alternative Entschlüsselung auch fehlgeschlagen:', altError.message);
+                        }
                     }
                 }
                 
@@ -1045,21 +1101,10 @@
                 return;
             }
 
-            // Erfolg anzeigen - verbesserte Dateinamen-Logik
+            // Erfolg anzeigen - Dateinamen-Logik basierend auf verfügbaren Parametern
             let displayName;
             
-            // TEMPORÄRER FIX: Spezifische Job-IDs mit bekannten Dateinamen
-            const knownJobMappings = {
-                '70792955': '2_TH_Blaimschein.zip',
-                '4dfd8abf': 'Test_Projekt.zip',  // Neue Job-ID hinzugefügt
-                '0f18fb0f': '2_TH_Blaimschein.zip'  // Aktuelle Job-ID für Blaimschein-Projekt
-            };
-            
-            if (knownJobMappings[jobNumber]) {
-                // Bekannte Job-ID - verwende den korrekten Dateinamen
-                displayName = knownJobMappings[jobNumber];
-                console.log('🎯 Verwende bekannten Dateinamen für Job', jobNumber, ':', displayName);
-            } else if (originalFileName) {
+            if (originalFileName) {
                 // Ursprünglicher Dateiname aus data Parameter verfügbar - höchste Priorität
                 displayName = originalFileName;
                 console.log('✅ Verwende ursprünglichen Dateinamen:', displayName);
