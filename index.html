@@ -675,64 +675,75 @@
             }
             
             try {
-                console.log('🔍 Roher data Parameter (erste 200 Zeichen):', dataParam.substring(0, 200));
-                console.log('🔍 Roher data Parameter Länge:', dataParam.length);
+                // Base64 dekodieren
+                const decoded = atob(dataParam);
+                console.log('🔍 Data Parameter dekodiert (erste 100 Zeichen):', decoded.substring(0, 100));
                 
-                // Verschiedene Dekodierungsversuche
-                console.log('--- Versuch 1: Base64 Dekodierung ---');
+                // Versuche Job-Token zu dekodieren (XOR verschlüsselt)
+                const key = "archviz_nussbaumer_2025_secure_key";
+                let decryptedData = "";
+                
+                for (let i = 0; i < decoded.length; i++) {
+                    const keyChar = key.charCodeAt(i % key.length);
+                    const dataChar = decoded.charCodeAt(i);
+                    decryptedData += String.fromCharCode(dataChar ^ keyChar);
+                }
+                
+                console.log('🔐 Entschlüsselte Daten (erste 100 Zeichen):', decryptedData.substring(0, 100));
+                
+                // Versuche JSON zu parsen
                 try {
-                    const decoded = atob(dataParam);
-                    console.log('✅ Base64 dekodiert (erste 500 Zeichen):', decoded.substring(0, 500));
+                    const jobData = JSON.parse(decryptedData);
+                    console.log('📋 Job-Token erfolgreich geparst:', jobData);
                     
-                    // Suche nach ZIP-Dateinamen im dekodierten Text
-                    const zipMatch = decoded.match(/([^\/\\:*?"<>|\s]+\.zip)/gi);
-                    if (zipMatch) {
-                        console.log('🎯 ZIP-Dateien gefunden:', zipMatch);
-                        // Suche nach dem Format "Nummer_Name.zip"
-                        const numberNameMatch = zipMatch.find(name => /^\d+_/.test(name));
-                        if (numberNameMatch) {
-                            console.log('✅ Bester Match gefunden:', numberNameMatch);
-                            return numberNameMatch;
-                        }
-                        return zipMatch[0]; // Ersten ZIP-Namen nehmen
+                    // Prüfe auf originalFileName Feld ('o')
+                    if (jobData.o) {
+                        console.log('✅ OriginalFileName aus Job-Token:', jobData.o);
+                        return jobData.o;
                     }
-                } catch (e) {
-                    console.log('❌ Base64 Dekodierung fehlgeschlagen:', e.message);
-                }
-                
-                console.log('--- Versuch 2: URL Dekodierung ---');
-                try {
-                    const urlDecoded = decodeURIComponent(dataParam);
-                    console.log('✅ URL dekodiert (erste 500 Zeichen):', urlDecoded.substring(0, 500));
                     
-                    const zipMatch = urlDecoded.match(/([^\/\\:*?"<>|\s]+\.zip)/gi);
-                    if (zipMatch) {
-                        console.log('🎯 ZIP-Dateien nach URL-Dekodierung gefunden:', zipMatch);
-                        const numberNameMatch = zipMatch.find(name => /^\d+_/.test(name));
-                        if (numberNameMatch) {
-                            console.log('✅ Bester Match gefunden:', numberNameMatch);
-                            return numberNameMatch;
-                        }
-                        return zipMatch[0];
+                    // Fallback: ZIP-Dateiname aus 'z' Feld
+                    if (jobData.z) {
+                        console.log('📦 ZipFileName aus Job-Token:', jobData.z);
+                        return jobData.z;
                     }
-                } catch (e) {
-                    console.log('❌ URL Dekodierung fehlgeschlagen:', e.message);
+                    
+                } catch (jsonError) {
+                    console.log('⚠️ Job-Token ist kein gültiges JSON, verwende String-Suche');
                 }
                 
-                console.log('--- Versuch 3: Direktsuche im rohen Parameter ---');
-                const directMatch = dataParam.match(/(\d+_[A-Za-z][^\/\\:*?"<>|\s]*\.zip)/gi);
-                if (directMatch) {
-                    console.log('✅ Direkter Match gefunden:', directMatch[0]);
-                    return directMatch[0];
+                // Fallback: Suche nach ZIP-Dateinamen im dekodierten Text
+                const zipMatch = decoded.match(/([^\/\\:*?"<>|\s]+\.zip)/gi);
+                if (zipMatch) {
+                    console.log('🎯 ZIP-Dateien gefunden:', zipMatch);
+                    // Suche nach dem Format "Nummer_Name.zip"
+                    const numberNameMatch = zipMatch.find(name => /^\d+_/.test(name));
+                    if (numberNameMatch) {
+                        console.log('✅ Originalname gefunden:', numberNameMatch);
+                        return numberNameMatch;
+                    }
+                    return zipMatch[0]; // Ersten ZIP-Namen nehmen
                 }
                 
-                console.log('⚠️ Kein ZIP-Dateiname gefunden');
+                console.log('⚠️ Kein ZIP-Dateiname im data Parameter gefunden');
                 return null;
                 
             } catch (error) {
-                console.error('❌ Allgemeiner Fehler:', error);
+                console.log('❌ Data Parameter Dekodierung fehlgeschlagen:', error.message);
                 return null;
             }
+        }
+
+        // Erstellt einen benutzerfreundlichen Dateinamen basierend auf Job-Nummer
+        function createFriendlyFileName(jobNumber) {
+            if (!jobNumber) return 'Download.zip';
+            
+            // Extrahiere die ersten paar Zeichen der Job-Nummer
+            const jobPrefix = jobNumber.substring(0, 8);
+            
+            // Erstelle einen benutzerfreundlichen Namen
+            // Format: "Projekt_[erste 8 Zeichen].zip"
+            return `Projekt_${jobPrefix}.zip`;
         }
 
         // Formatiert das Datum für die Anzeige
@@ -994,12 +1005,12 @@
                 return;
             }
 
-            // Erfolg anzeigen - verbesserte Dateinamen-Logik mit data Parameter
+            // Erfolg anzeigen - verbesserte Dateinamen-Logik
             let displayName;
             if (originalFileName) {
                 // Ursprünglicher Dateiname aus data Parameter verfügbar - höchste Priorität
                 displayName = originalFileName;
-                console.log('✅ Verwende ursprünglichen Dateinamen aus data Parameter:', displayName);
+                console.log('✅ Verwende ursprünglichen Dateinamen:', displayName);
             } else if (zipName) {
                 // ZIP-Name verfügbar - verwende ihn direkt
                 displayName = decodeURIComponent(zipName);
@@ -1013,9 +1024,9 @@
                 displayName = decodeURIComponent(folderName) + '.zip';
                 console.log('✅ Verwende folder Parameter:', displayName);
             } else {
-                // Fallback: Job-Nummer verwenden
-                displayName = `Projekt_${jobNumber}.zip`;
-                console.log('⚠️ Fallback zu Job-Nummer:', displayName);
+                // Benutzerfreundlicher Fallback basierend auf Job-Nummer
+                displayName = createFriendlyFileName(jobNumber);
+                console.log('✅ Verwende benutzerfreundlichen Namen:', displayName);
             }
             
             const fileName = displayName; // Für Download-Attribut
