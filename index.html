@@ -675,78 +675,62 @@
             }
             
             try {
-                console.log('🔍 Roher data Parameter (erste 100 Zeichen):', dataParam.substring(0, 100) + '...');
+                console.log('🔍 Roher data Parameter (erste 200 Zeichen):', dataParam.substring(0, 200));
+                console.log('🔍 Roher data Parameter Länge:', dataParam.length);
                 
-                // Base64 dekodieren
-                const decoded = atob(dataParam);
-                console.log('🔍 Dekodierter data Parameter (vollständig):', decoded);
-                
-                // Nach .zip Dateinamen suchen (erweiterte Muster)
-                const zipPatterns = [
-                    /(\d+_[^\/\\:*?"<>|]+\.zip)/gi,    // Spezifisch für "2_TH_Blaimschein.zip" Format
-                    /([^\/\\:*?"<>|]+_[^\/\\:*?"<>|]+\.zip)/gi, // Beliebiger Name mit Unterstrich und .zip
-                    /([^\/\\:*?"<>|]+\.zip)/gi,        // Beliebiger Dateiname mit .zip
-                    /([A-Za-z0-9_\-\s]+\.zip)/gi       // Alphanumerische Namen mit Leerzeichen, Unterstrichen, Bindestrichen
-                ];
-                
-                let foundNames = [];
-                
-                for (let i = 0; i < zipPatterns.length; i++) {
-                    const pattern = zipPatterns[i];
-                    const matches = decoded.match(pattern);
-                    if (matches) {
-                        console.log(`✅ Pattern ${i+1} gefunden:`, matches);
-                        foundNames = foundNames.concat(matches);
-                    }
-                }
-                
-                if (foundNames.length > 0) {
-                    // Nimm den ersten gefundenen Namen
-                    const bestMatch = foundNames[0];
-                    console.log('✅ Bester Dateiname gefunden:', bestMatch);
-                    return bestMatch;
-                }
-                
-                console.log('⚠️ Kein .zip Dateiname im data Parameter gefunden');
-                console.log('🔍 Suche nach allgemeinen Dateinamen-Mustern...');
-                
-                // Fallback: Suche nach Dateinamen-ähnlichen Strukturen
-                const generalPatterns = [
-                    /(\d+_[A-Za-z]+[^\/\\:*?"<>|]*)/gi,  // Zahlen_Buchstaben Format
-                    /([A-Za-z0-9_\-]+)/gi                // Allgemeine alphanumerische Strings
-                ];
-                
-                for (let i = 0; i < generalPatterns.length; i++) {
-                    const pattern = generalPatterns[i];
-                    const matches = decoded.match(pattern);
-                    if (matches && matches.length > 0) {
-                        console.log(`🔍 Allgemeines Muster ${i+1} gefunden:`, matches);
-                        // Suche nach dem längsten/interessantesten Match
-                        const longestMatch = matches.reduce((a, b) => a.length > b.length ? a : b);
-                        if (longestMatch.length > 5) { // Nur wenn es sinnvoll lang ist
-                            console.log('📝 Verwende als Basis für Dateinamen:', longestMatch);
-                            return longestMatch + '.zip';
-                        }
-                    }
-                }
-                
-                return null;
-                
-            } catch (error) {
-                console.error('❌ Fehler beim Dekodieren des data Parameters:', error);
-                console.log('🔍 Versuche data Parameter als bereits dekodiert zu behandeln...');
-                
-                // Fallback: Behandle den Parameter als bereits dekodiert
+                // Verschiedene Dekodierungsversuche
+                console.log('--- Versuch 1: Base64 Dekodierung ---');
                 try {
-                    const zipMatch = dataParam.match(/(\d+_[^\/\\:*?"<>|]+\.zip)/gi);
+                    const decoded = atob(dataParam);
+                    console.log('✅ Base64 dekodiert (erste 500 Zeichen):', decoded.substring(0, 500));
+                    
+                    // Suche nach ZIP-Dateinamen im dekodierten Text
+                    const zipMatch = decoded.match(/([^\/\\:*?"<>|\s]+\.zip)/gi);
                     if (zipMatch) {
-                        console.log('✅ Dateiname im rohen Parameter gefunden:', zipMatch[0]);
+                        console.log('🎯 ZIP-Dateien gefunden:', zipMatch);
+                        // Suche nach dem Format "Nummer_Name.zip"
+                        const numberNameMatch = zipMatch.find(name => /^\d+_/.test(name));
+                        if (numberNameMatch) {
+                            console.log('✅ Bester Match gefunden:', numberNameMatch);
+                            return numberNameMatch;
+                        }
+                        return zipMatch[0]; // Ersten ZIP-Namen nehmen
+                    }
+                } catch (e) {
+                    console.log('❌ Base64 Dekodierung fehlgeschlagen:', e.message);
+                }
+                
+                console.log('--- Versuch 2: URL Dekodierung ---');
+                try {
+                    const urlDecoded = decodeURIComponent(dataParam);
+                    console.log('✅ URL dekodiert (erste 500 Zeichen):', urlDecoded.substring(0, 500));
+                    
+                    const zipMatch = urlDecoded.match(/([^\/\\:*?"<>|\s]+\.zip)/gi);
+                    if (zipMatch) {
+                        console.log('🎯 ZIP-Dateien nach URL-Dekodierung gefunden:', zipMatch);
+                        const numberNameMatch = zipMatch.find(name => /^\d+_/.test(name));
+                        if (numberNameMatch) {
+                            console.log('✅ Bester Match gefunden:', numberNameMatch);
+                            return numberNameMatch;
+                        }
                         return zipMatch[0];
                     }
                 } catch (e) {
-                    console.error('❌ Auch Fallback fehlgeschlagen:', e);
+                    console.log('❌ URL Dekodierung fehlgeschlagen:', e.message);
                 }
                 
+                console.log('--- Versuch 3: Direktsuche im rohen Parameter ---');
+                const directMatch = dataParam.match(/(\d+_[A-Za-z][^\/\\:*?"<>|\s]*\.zip)/gi);
+                if (directMatch) {
+                    console.log('✅ Direkter Match gefunden:', directMatch[0]);
+                    return directMatch[0];
+                }
+                
+                console.log('⚠️ Kein ZIP-Dateiname gefunden');
+                return null;
+                
+            } catch (error) {
+                console.error('❌ Allgemeiner Fehler:', error);
                 return null;
             }
         }
