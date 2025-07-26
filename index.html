@@ -60,9 +60,9 @@
         }
 
         .logo {
-            width: 300px;
+            width: 247px;
             height: auto;
-            max-height: 180px;
+            max-height: 148px;
             object-fit: contain;
             filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
         }
@@ -93,7 +93,7 @@
         .company-subtitle {
             display: none;
             color: #666666;
-            font-size: 14px;
+            font-size: 15.4px;
             font-weight: 300;
             letter-spacing: 1px;
             text-transform: uppercase;
@@ -386,6 +386,11 @@
         
 
 
+        /* Content-Column standardmäßig ausblenden */
+        .content-column {
+            display: none;
+        }
+
         /* Desktop Layout - Zweispaltig */
         @media (min-width: 1024px) {
             body {
@@ -413,10 +418,10 @@
             }
             
             .content-column {
+                display: flex; /* Nur auf Desktop anzeigen */
                 flex: 1;
                 background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
                 color: white;
-                display: flex;
                 flex-direction: column;
                 justify-content: center;
                 align-items: center;
