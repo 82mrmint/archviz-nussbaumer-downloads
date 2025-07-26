@@ -665,7 +665,7 @@
         
         <div class="content-column">
             <h1>Architektur erleben,<br>bevor sie entsteht.</h1>
-            <p>Fotorealistische 3D-Visualisierungen, die Ihre Bauprojekte zum Leben erwecken – schnell, zuverlässig und individuell.</p>
+            <p>Sehen, fühlen, entscheiden – fotorealistische 3D‑Visualisierungen, die Ihr Projekt erlebbar machen.</p>
         </div>
     </div>
 
@@ -727,6 +727,61 @@
 
         // Variable zum Verhindern von doppelten Downloads
         let downloadStarted = false;
+
+        // E-Mail-Benachrichtigung senden (bei tatsächlichem Download)
+        function sendDownloadNotification(fileName, jobNumber, customerName) {
+            try {
+                // Einfache Lösung über EmailJS (kostenloses Service)
+                const templateParams = {
+                    to_email: 'office@archviz-nussbaumer.at',
+                    from_name: 'archVIZ NUSSBAUMER Download-System',
+                    subject: `Download durchgeführt - ${fileName}`,
+                    message: `
+Eine Datei wurde erfolgreich heruntergeladen:
+
+📁 Dateiname: ${fileName}
+🏷️ Job-Nummer: ${jobNumber || 'Unbekannt'}
+👤 Kunde: ${customerName || 'Unbekannt'}
+⏰ Download-Zeit: ${new Date().toLocaleString('de-DE')}
+🌐 Browser: ${navigator.userAgent.split(' ').slice(-2).join(' ')}
+
+Diese Benachrichtigung wurde automatisch generiert.
+
+---
+archVIZ NUSSBAUMER
+Download-Benachrichtigung
+`
+                };
+
+                // EmailJS Service nutzen (Sie müssen sich einmalig anmelden)
+                // Alternative: Eigener Webhook-Service
+                console.log('📧 Download-Benachrichtigung wird gesendet...', templateParams);
+                
+                // Für jetzt: Console-Log (später durch EmailJS ersetzen)
+                fetch('https://formspree.io/f/mzzvrkoa', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: 'office@archviz-nussbaumer.at',
+                        subject: `Download durchgeführt - ${fileName}`,
+                        message: templateParams.message
+                    })
+                }).then(response => {
+                    if (response.ok) {
+                        console.log('✅ Download-Benachrichtigung erfolgreich gesendet!');
+                    } else {
+                        console.log('⚠️ Download-Benachrichtigung fehlgeschlagen');
+                    }
+                }).catch(error => {
+                    console.log('❌ Fehler beim Senden der Download-Benachrichtigung:', error);
+                });
+                
+            } catch (error) {
+                console.log('❌ Fehler bei Download-Benachrichtigung:', error);
+            }
+        }
 
         // URL-Parameter auslesen
         function getUrlParameter(name) {
@@ -1213,6 +1268,14 @@
                 try {
                     downloadStarted = true;
                     console.log('🚀 Starte automatischen Download:', downloadUrl);
+                    
+                    // 📧 DOWNLOAD-BENACHRICHTIGUNG SENDEN
+                    const jobNumber = getUrlParameter('job');
+                    const originalFileName = decodeDataParameter(dataParam);
+                    const displayFileName = originalFileName || displayName;
+                    
+                    // E-Mail-Benachrichtigung senden
+                    sendDownloadNotification(displayFileName, jobNumber, 'Download-Kunde');
                     
                     // Download über versteckten iframe (wie in Target-Version)
                     document.getElementById('downloadFrame').src = downloadUrl;
